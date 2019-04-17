@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="lib/jade.jar" sourcepath="lib/JADE-src-4.5.0.zip">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MAS-Jade-Intro-SimpleBehaviors/lib/JADE-doc-4.5.0.zip!/jade/doc/api"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
