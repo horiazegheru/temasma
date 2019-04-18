@@ -4,6 +4,7 @@ import agents.EnvironmentAgent;
 import agents.utils.GridPosition;
 import agents.utils.Hole;
 import agents.utils.Tile;
+import jade.core.AID;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
@@ -127,15 +128,20 @@ public class MainContainerLauncher
 	 * Starts the agents assigned to the main container.
 	 */
 	void launchAgents() throws StaleProxyException {
+		Map<AID, GridPosition> aidPositions = new HashMap<>();
+
 		for (Map.Entry<String, GridPosition> entry: agentColPos.entrySet()) {
 			AgentController agentCtrl = mainContainer.createNewAgent(entry.getKey(), MyAgent.class.getName(),
-					new Object[] {entry.getValue()});
+					new Object[] {entry.getValue(), new AID("env", AID.ISLOCALNAME)});
+
+			AID aid = new AID(entry.getKey(), AID.ISLOCALNAME);
+			aidPositions.put(aid, entry.getValue());
 			agentCtrl.start();
 		}
 
 		AgentController envCtrl = mainContainer.createNewAgent("env", EnvironmentAgent.class.getName(),
 				new Object[] {agentsNr, operationTime, totalTime,
-						width, height, obstacles, tiles, holes});
+						width, height, obstacles, tiles, holes, aidPositions});
 		envCtrl.start();
 	}
 

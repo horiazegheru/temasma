@@ -1,9 +1,11 @@
 package agents.utils;
 
-public class Tile {
-	int count;
-	String color;
-	GridPosition pos;
+import java.io.Serializable;
+
+public class Tile implements Serializable {
+	public int count;
+	public String color;
+	public GridPosition pos;
 
 	public Tile(int count, String color, GridPosition pos) {
 		this.count = count;

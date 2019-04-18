@@ -1,11 +1,15 @@
 package agents;
 
+import agents.behaviors.EnvironmentBehavior;
 import agents.utils.GridPosition;
 import agents.utils.Hole;
 import agents.utils.Tile;
+import jade.core.AID;
 import jade.core.Agent;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class EnvironmentAgent extends Agent {
     String name;
@@ -31,19 +35,19 @@ public class EnvironmentAgent extends Agent {
         tiles = (ArrayList<Tile>) getArguments()[6];
         holes = (ArrayList<Hole>) getArguments()[7];
 
-        System.out.println("my name is " + name);
-        System.out.println("agentsNr = " +  agentsNr);
-        System.out.println("operationTime = " + operationTime);
-        System.out.println("totalTime = " + totalTime);
-        System.out.println("width = " + width);
-        System.out.println("height = " + height);
-        System.out.println("obstacles = " + obstacles);
-        System.out.println("tiles = " + tiles);
-        System.out.println("holes = " + holes);
+        HashMap<AID, GridPosition> aidPositions = (HashMap<AID, GridPosition>) getArguments()[8];
+        Map<AID, Integer> aidsScores = new HashMap<>();
+
+        for (AID aid: aidPositions.keySet())
+            aidsScores.put(aid, 0);
+
+        addBehaviour(new EnvironmentBehavior(agentsNr, operationTime, totalTime, width, height, obstacles, tiles, holes,
+                aidsScores, aidPositions));
     }
 
     @Override
     protected void takeDown()
     {
+        System.out.println("ENV MORT");
     }
 }

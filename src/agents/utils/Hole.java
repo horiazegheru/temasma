@@ -1,9 +1,11 @@
 package agents.utils;
 
-public class Hole {
-	int depth;
-	String color;
-	GridPosition pos;
+import java.io.Serializable;
+
+public class Hole implements Serializable {
+	public int depth;
+	public String color;
+	public GridPosition pos;
 
 	public Hole(int depth, String color, GridPosition pos) {
 		this.depth = depth;

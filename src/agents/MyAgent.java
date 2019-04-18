@@ -1,6 +1,8 @@
 package agents;
 
+import agents.behaviors.AgentBehavior;
 import agents.utils.GridPosition;
+import jade.core.AID;
 import jade.core.Agent;
 
 /**
@@ -15,19 +17,22 @@ public class MyAgent extends Agent
 
 	String color;
 	GridPosition pos;
+	AID envAID;
 
 	@Override
 	protected void setup()
 	{
 		color = getAID().getLocalName();
 		pos = (GridPosition) getArguments()[0];
+		envAID = (AID) getArguments()[1];
 
-		System.out.println("my name is " + color);
-		System.out.println(color + " is at pos " + pos);
+		addBehaviour(new AgentBehavior(color, pos, envAID));
+
 	}
 	
 	@Override
 	protected void takeDown()
 	{
+		System.out.println(color + " MORT");
 	}
 }
