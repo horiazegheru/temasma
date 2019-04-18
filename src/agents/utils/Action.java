@@ -6,7 +6,7 @@ public class Action implements Serializable {
     public String actionName;
     public String arg1;
 
-    public Action(String actionName, String arg1, String arg2) {
+    public Action(String actionName, String arg1) {
         this.actionName = actionName;
         this.arg1 = arg1;
     }

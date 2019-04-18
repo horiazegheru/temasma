@@ -37,7 +37,7 @@ public class AgentBehavior extends CyclicBehaviour {
     }
 
     public Action chooseAction() {
-        return new Action("Move", "East", null);
+        return new Action("Move", "East");
     }
 
     public void sendAction() throws IOException {
