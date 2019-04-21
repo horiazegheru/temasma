@@ -16,4 +16,21 @@ public class Tile implements Serializable {
 	public String toString() {
 		return this.count + " " + this.color + " " + this.pos;
 	}
+
+	public boolean equals(Object o) {
+		if (o == this) {
+			return true;
+		}
+		if (!(o instanceof Tile)) {
+			return false;
+		}
+		Tile cc = (Tile)o;
+		return cc.color == color && cc.pos == pos;
+	}
+
+	public int hashCode() {
+		int result = 17;
+		result = 31 * result + color.length() + pos.x + pos.y;
+		return result;
+	}
 }

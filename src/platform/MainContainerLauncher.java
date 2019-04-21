@@ -132,7 +132,7 @@ public class MainContainerLauncher
 
 		for (Map.Entry<String, GridPosition> entry: agentColPos.entrySet()) {
 			AgentController agentCtrl = mainContainer.createNewAgent(entry.getKey(), MyAgent.class.getName(),
-					new Object[] {entry.getValue(), new AID("env", AID.ISLOCALNAME)});
+					new Object[] {entry.getValue(), new AID("env", AID.ISLOCALNAME), agentsNr});
 
 			AID aid = new AID(entry.getKey(), AID.ISLOCALNAME);
 			aidPositions.put(aid, entry.getValue());

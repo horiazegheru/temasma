@@ -21,6 +21,7 @@ public class EnvironmentAgent extends Agent {
     ArrayList<GridPosition> obstacles = new ArrayList<>();
     ArrayList<Tile> tiles = new ArrayList<>();
     ArrayList<Hole> holes = new ArrayList<>();
+    Map<AID, Integer> aidsScores = new HashMap<>();
 
     @Override
     protected void setup()
@@ -36,7 +37,6 @@ public class EnvironmentAgent extends Agent {
         holes = (ArrayList<Hole>) getArguments()[7];
 
         HashMap<AID, GridPosition> aidPositions = (HashMap<AID, GridPosition>) getArguments()[8];
-        Map<AID, Integer> aidsScores = new HashMap<>();
 
         for (AID aid: aidPositions.keySet())
             aidsScores.put(aid, 0);
@@ -46,8 +46,11 @@ public class EnvironmentAgent extends Agent {
     }
 
     @Override
-    protected void takeDown()
-    {
+    protected void takeDown() {
+        for (AID aid: aidsScores.keySet()) {
+            System.out.println("AGENT " + aid.getLocalName() + " finished with " + aidsScores.get(aid) + " points.");
+        }
+
         System.out.println("ENV MORT");
     }
 }

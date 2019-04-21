@@ -25,14 +25,14 @@ public class MyAgent extends Agent
 		color = getAID().getLocalName();
 		pos = (GridPosition) getArguments()[0];
 		envAID = (AID) getArguments()[1];
+		int agentsNr = (int) getArguments()[2];
 
-		addBehaviour(new AgentBehavior(color, pos, envAID));
+		addBehaviour(new AgentBehavior(color, pos, envAID, agentsNr));
 
 	}
 	
 	@Override
 	protected void takeDown()
 	{
-		System.out.println(color + " MORT");
 	}
 }
