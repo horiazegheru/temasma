@@ -73,7 +73,7 @@ public class MainContainerLauncher
 			String[] positions = br.readLine().split(" ");
 
 			for (int i = 0; i < agentsNr; ++i) {
-				agentColPos.put(colors[i], new GridPosition(
+				agentColPos.put(colors[i].toLowerCase(), new GridPosition(
 						Integer.parseInt(positions[2 * i]),
 						Integer.parseInt(positions[2 * i + 1])));
 			}
@@ -99,7 +99,7 @@ public class MainContainerLauncher
 
 				tiles.add(new Tile(
 						Integer.parseInt(tilesElem[0]),
-						tilesElem[1],
+						tilesElem[1].toLowerCase(),
 						new GridPosition(
 								Integer.parseInt(tilesElem[2]),
 								Integer.parseInt(tilesElem[3]))
@@ -115,7 +115,7 @@ public class MainContainerLauncher
 
 				holes.add(new Hole(
 						Integer.parseInt(holesElem[0]),
-						holesElem[1],
+						holesElem[1].toLowerCase(),
 						new GridPosition(
 								Integer.parseInt(holesElem[2]),
 								Integer.parseInt(holesElem[3]))
