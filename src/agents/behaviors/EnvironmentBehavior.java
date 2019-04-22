@@ -1,7 +1,9 @@
 package agents.behaviors;
 
+import agents.MyAgent;
 import agents.utils.*;
 import jade.core.AID;
+import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -127,6 +129,7 @@ public class EnvironmentBehavior extends CyclicBehaviour {
                         myAgent.doDelete();
                     }
                 }
+                printZeShite();
             }
     }
 
@@ -321,6 +324,111 @@ public class EnvironmentBehavior extends CyclicBehaviour {
 
         return errorMessage;
     }
+
+    public void printZeShite() {
+        System.out.println();
+
+        System.out.println("printem de aci " + aidPositions);
+
+        for (int i = 0; i <= this.width  * 2; i++) {
+            int realWidith = i/ 2;
+            for (int j = 0; j <= this.height; j++) {
+
+                boolean printed = false;
+                boolean printedAgent = false;
+                AID currentAgentInPosition = null;
+
+                for (Map.Entry<AID, GridPosition> entry : aidPositions.entrySet()) {
+                    AID aid = entry.getKey();
+                    GridPosition postition = entry.getValue();
+                    if (realWidith == postition.x && j == postition.y && i % 2 == 0) {
+                        System.out.print("| @ " + aid.getName()
+                                .substring(0, Math.min(aid.getName().length(), 3)) + "  |");
+                        currentAgentInPosition = aid;
+                        printed = true;
+                        printedAgent = true;
+                    } else if (realWidith == postition.x && j == postition.y && i % 2 == 1) {
+                        currentAgentInPosition = aid;
+                        printedAgent = true;
+                    }
+                }
+                printed = printObstacles(realWidith, j, printed);
+
+                printed = printTiles(i, j, printed, printedAgent ,currentAgentInPosition);
+
+                printed = fuckingHoles(i, realWidith, j, printed, printedAgent, currentAgentInPosition);
+                if (!printed) {
+                    System.out.print("|        |");
+                }
+            }
+            System.out.println();
+
+        }
+        System.out.println();
+        System.out.println();
+        System.out.println();
+    }
+
+    private boolean fuckingHoles(int i, int realWidith, int j, boolean printed,
+            boolean printedAgent, AID currentAgentInPosition) {
+        for (Hole hole : holes) {
+            if (realWidith == hole.pos.x && j == hole.pos.y) {
+                if (i % 2 == 0 && !printedAgent) {
+                    System.out
+                            .print("|# " + hole.color.substring(0, Math.min(hole.color.length(), 3))
+                                    + " " + hole.depth + " |");
+                } else if (currentAgentInPosition != null && i % 2 == 1) {
+                        System.out.print("|# " + hole.color
+                                .substring(0, Math.min(hole.color.length(), 3)) + " " + hole.depth
+                                + " |");
+                    } else if (!printedAgent) {
+                        System.out.print("|        |");
+                    }
+
+                printed = true;
+            }
+        }
+        return printed;
+    }
+
+    private boolean printObstacles(int i, int j, boolean printed) {
+        for (GridPosition obst : obstacles) {
+            if (obst.x == i && obst.y == j) {
+                System.out.print("|////////|");
+                printed = true;
+            }
+        }
+        return printed;
+    }
+
+
+    /*
+    * The keyword TILES, followed by groups of 4 elements, characterizing groups
+    * of tiles in the grid: the number of tiles in the group, the color of the tiles in the group,
+    * and the coordinates of the cell in which the group is located. Note: there may be more
+    * groups of tiles in the same cell, if the groups have different colors;
+    *
+    */
+
+    private boolean printTiles(int i, int j, boolean printed, boolean printedAgent, AID currentAgentInPosition) {
+        for (Tile tle : tiles) {
+            if (tle.pos.x == (i / 2) && tle.pos.y == j) {
+                if (i % 2 == 0 && !printedAgent) {
+                    System.out.print("|" + "$ " + tle.count + " " + tle.color
+                            .substring(0, Math.min(tle.color.length(), 3)) + " |");
+                } else if (currentAgentInPosition != null && i % 2 == 1) {
+                    System.out.print("|" + "$ " + tle.count + " " + tle.color
+                            .substring(0, Math.min(tle.color.length(), 3)) + " |");
+                } else if (!printedAgent){
+                    System.out.print("|        |");
+                }
+                printed = true;
+            }
+        }
+        return printed;
+    }
+
+
 
     @Override
     public void action() {

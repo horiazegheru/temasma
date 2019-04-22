@@ -35,4 +35,28 @@ public class MyAgent extends Agent
 	protected void takeDown()
 	{
 	}
+
+	public String getColor() {
+		return color;
+	}
+
+	public void setColor(String color) {
+		this.color = color;
+	}
+
+	public GridPosition getPos() {
+		return pos;
+	}
+
+	public void setPos(GridPosition pos) {
+		this.pos = pos;
+	}
+
+	public AID getEnvAID() {
+		return envAID;
+	}
+
+	public void setEnvAID(AID envAID) {
+		this.envAID = envAID;
+	}
 }
