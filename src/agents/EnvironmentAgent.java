@@ -51,6 +51,6 @@ public class EnvironmentAgent extends Agent {
             System.out.println("AGENT " + aid.getLocalName() + " finished with " + aidsScores.get(aid) + " points.");
         }
 
-        System.out.println("ENV MORT");
+        System.out.println("ENV ENDED");
     }
 }

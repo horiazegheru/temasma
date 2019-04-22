@@ -42,9 +42,9 @@ public class AgentBehavior extends CyclicBehaviour {
         this.pos = pos;
         this.envAID = envAID;
 
-        System.out.println("my name is " + color);
+       /* System.out.println("my name is " + color);
         System.out.println(color + " is at pos " + pos);
-        System.out.println(color + " knows envAID is " + envAID);
+        System.out.println(color + " knows envAID is " + envAID);*/
         aliveAgents = agentsNr;
     }
 
@@ -54,21 +54,21 @@ public class AgentBehavior extends CyclicBehaviour {
         // BLUE WILL DIE BECAUSE IT WILL GET AN ERROR (ACTIONS DO NOT MATCH)
 
         if (perception.currentTime == 0)
-            return new Action("Move", "East");
+            return new Action("Move", "South");
 
         if (perception.currentTime == 300)
-            return new Action("Move", "East");
+            return new Action("Move", "South");
 
         if (perception.currentTime == 600)
             return new Action("Pick", "blue");
 
         if (perception.currentTime == 900)
-            return new Action("Move", "West");
+            return new Action("Move", "North");
 
         if (perception.currentTime == 1200)
-            return new Action("Use_tile", "South");
+            return new Action("Use_tile", "East");
 
-        return new Action("Move", "South");
+        return new Action("Move", "West");
     }
 
     public void sendAction(Perception perception) throws IOException {
@@ -88,14 +88,16 @@ public class AgentBehavior extends CyclicBehaviour {
         if (receivedMsg != null) {
             gotFirstEnvMessage = true;
             Perception perception = (Perception) receivedMsg.getContentObject();
+           /*
             System.out.println(color + ": " + perception);
             System.out.println(color + " ERROR: " + perception.error);
+            */
             pos = perception.pos;
             otherAgents = perception.otherAgentAIDs;
             negotiate();
 
             if (perception.error != null) {
-                System.out.println("AGENT " + color  + " TERMINATING...");
+                System.out.println("AGENT " + color  + " TERMINATING DUE TO ERROR..." + perception.error);
                 aliveAgents--;
                 myAgent.doDelete();
             }
