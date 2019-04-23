@@ -12,13 +12,14 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class EnvironmentBehavior extends CyclicBehaviour {
     static final String AGENTPERCEPT_PROTOCOL = "sendpercept";
     static final String AGENTTERMINATE_PROTOCOL = "terminate";
     private static final String EMPTY_CELL = "|        |";
     private static final String OBSTACLE = "|////////|";
-
+    private static final int TIMER_DELAY = 2000;
 
     AtomicInteger recNr = new AtomicInteger();
 
@@ -62,7 +63,12 @@ public class EnvironmentBehavior extends CyclicBehaviour {
             aidErrors.put(aid, null);
             otherAgents.add(aid);
         }
-
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                printGrid();
+            }}, 0, TIMER_DELAY);
        /*
         System.out.println("my name is " + "env");
         System.out.println("agentsNr = " +  agentsNr);
@@ -194,13 +200,20 @@ public class EnvironmentBehavior extends CyclicBehaviour {
                 pos.x--;
 
                 nullOrError = checkPosition(pos);
+                if (nullOrError != null) {
+                    pos.x++;
+                }
                 return nullOrError;
             }
             if (action.arg1.equals("South")) {
+
                 pos = aidPositions.get(sender);
                 pos.x++;
 
                 nullOrError = checkPosition(pos);
+                if (nullOrError != null) {
+                    pos.x--;
+                }
                 return nullOrError;
             }
             if (action.arg1.equals("East")) {
@@ -208,6 +221,9 @@ public class EnvironmentBehavior extends CyclicBehaviour {
                 pos.y--;
 
                 nullOrError = checkPosition(pos);
+                if (nullOrError != null) {
+                    pos.y++;
+                }
                 return nullOrError;
             }
             if (action.arg1.equals("West")) {
@@ -215,6 +231,9 @@ public class EnvironmentBehavior extends CyclicBehaviour {
                 pos.y++;
 
                 nullOrError = checkPosition(pos);
+                if (nullOrError != null) {
+                    pos.y--;
+                }
                 return nullOrError;
             }
         }
@@ -330,9 +349,11 @@ public class EnvironmentBehavior extends CyclicBehaviour {
     public void printGridState(int currentTime, AID aidParam, Action action) {
 
         System.out.println("Currently " + "[" + aidParam.getLocalName() + "]" + " wants to : " + action.actionName + " " + action.arg1);
+    }
+    public void printGrid() {
 
         aidsScores.forEach((agent, score) -> {
-            System.out.println("[ENV]" + agent.getName() + ": " + score );
+            System.out.println("[ENV]" + agent.getName() + ": " + score);
         });
 
         for (int i = 0; i < (this.height  * 2); i++) {
@@ -346,16 +367,35 @@ public class EnvironmentBehavior extends CyclicBehaviour {
                 for (Map.Entry<AID, GridPosition> entry : aidPositions.entrySet()) {
                     AID aid = entry.getKey();
                     GridPosition postition = entry.getValue();
-                    if (realHeight == postition.x && j == postition.y && i % 2 == 0) {
-                        System.out.print("| @ " + getColorShort(aid.getName()) + "  |");
-                        currentAgentInPosition = aid;
-                        printed = true;
-                        printedAgent = true;
-                    } else if (realHeight == postition.x && j == postition.y && i % 2 == 1) {
-                        currentAgentInPosition = aid;
-                        printedAgent = true;
+                    List<Map.Entry<AID, GridPosition>> moreInThisPlace =
+                            aidPositions.entrySet().stream()
+                                    .filter(otherMember -> !otherMember.equals(entry)
+                                            && !otherMember.getKey().getName().equals(aid.getName())
+                                            && otherMember.getValue().x == postition.x
+                                            && otherMember.getValue().y == postition.y)
+                                    .collect(Collectors.toList());
+                    if (moreInThisPlace.size() > 0 ) {
+                        if (realHeight == postition.x && j == postition.y && i % 2 == 0) {
+                            System.out.print("|@ MANY " + (moreInThisPlace.size() + 1) + "|");
+                            currentAgentInPosition = aid;
+                            printed = true;
+                            printedAgent = true;
+                            break;
+                        }
+                    } else {
+                        if (realHeight == postition.x && j == postition.y && i % 2 == 0) {
+                            System.out.print("| @ " + getColorShort(aid.getName()) + "  |");
+                            currentAgentInPosition = aid;
+                            printed = true;
+                            printedAgent = true;
+                        } else if (realHeight == postition.x && j == postition.y) {
+                            currentAgentInPosition = aid;
+                            printedAgent = true;
+                        }
                     }
                 }
+
+
                 printed = printObstacles(realHeight, j, printed);
 
                 printed = printTiles(i, j, printed, printedAgent, currentAgentInPosition);
@@ -367,7 +407,11 @@ public class EnvironmentBehavior extends CyclicBehaviour {
             }
             System.out.println();
             if (i % 2 == 1) {
-                System.out.println("==================================================");
+                for (int j = 0; j < this.width; j++) {
+                    System.out.print("==========");
+
+                }
+                System.out.println();
             }
 
         }
@@ -406,19 +450,58 @@ public class EnvironmentBehavior extends CyclicBehaviour {
     }
 
     private boolean printTiles(int i, int j, boolean printed, boolean printedAgent, AID currentAgentInPosition) {
+        String valueToPrint = "";
+        String numberOfValues = "";
+        boolean [][]printedHere = new boolean[height][width];
+        for (int xi = 0; xi < height; xi++)
+            for (int yj = 0; yj < width; yj++)
+                printedHere[xi][yj] = false;
+
+
         for (Tile tle : tiles) {
             if (tle.pos.x == (i / 2) && tle.pos.y == j) {
-                if (i % 2 == 0 && !printedAgent) {
-                    System.out.print("|$ " + tle.count + " " + getColorShort(tle.color) + " |");
-                } else if (currentAgentInPosition != null && i % 2 == 1) {
-                    System.out.print("|$ " + tle.count + " " + getColorShort(tle.color) + " |");
-                } else if (!printedAgent){
-                    System.out.print(EMPTY_CELL);
+                if (tiles.stream()
+                        .anyMatch(tile -> tile.pos.equals(tle.pos) && !tile.color.equals(tle.color))) {
+                    List<Tile> tilesInSamePosition =
+                            tiles.stream().filter(tile -> tile.pos.equals(tle.pos))
+                                    .collect(Collectors.toList());
+
+                    for (Tile tileInThisPosition : tilesInSamePosition) {
+                        valueToPrint = valueToPrint + tileInThisPosition.color.substring(0,1).toUpperCase();
+                        numberOfValues += tileInThisPosition.count;
+                    }
                 }
+                if (printedHere[tle.pos.x][tle.pos.y]) {
+                    continue;
+                }
+                if (i % 2 == 0 && !printedAgent) {
+                    printCurrentTile(valueToPrint, tle);
+                } else if (currentAgentInPosition != null && i % 2 == 1) {
+                    printCurrentTile(valueToPrint, tle);
+                } else if (!printedAgent){
+                    if (valueToPrint.equals("")) {
+                        System.out.print(EMPTY_CELL);
+                    } else {
+                        System.out.print(String.format("| %7.7s|", numberOfValues));
+                    }
+                }
+                if (!valueToPrint.equals("")) {
+                    printedHere[tle.pos.x][tle.pos.y] = true;
+                }
+                valueToPrint = "";
+                numberOfValues = "";
                 printed = true;
             }
         }
         return printed;
+    }
+
+    private void printCurrentTile(String valueToPrint, Tile tle) {
+        if (valueToPrint.equals("")) {
+            System.out.print("|$ " + tle.count + " " + getColorShort(tle.color) + " |");
+        } else {
+            System.out.print(String.format("|$%7.7s|", valueToPrint));
+        }
     }
 
     private String getColorShort(String color) {

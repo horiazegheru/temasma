@@ -14,3 +14,5 @@ TILES
 HOLES
 2 green 0 0
 2 blue 1 2
+
+RYBGOP
