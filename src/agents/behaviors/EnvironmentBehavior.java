@@ -44,6 +44,7 @@ public class EnvironmentBehavior extends CyclicBehaviour {
 
     long startTime;
     long currentTime;
+    Timer timer = new Timer();
 
     public EnvironmentBehavior(int agentsNr, int operationTime, int totalTime, int width, int height,
                                ArrayList<GridPosition> obstacles, ArrayList<Tile> tiles, ArrayList<Hole> holes,
@@ -66,7 +67,7 @@ public class EnvironmentBehavior extends CyclicBehaviour {
             aidErrors.put(aid, null);
             otherAgents.add(aid);
         }
-        Timer timer = new Timer();
+
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -134,6 +135,8 @@ public class EnvironmentBehavior extends CyclicBehaviour {
                     System.out.println("ENV SAYS TIMEOUT, TERMINATING....");
                     sendTerminate();
                     myAgent.doDelete();
+                    timer.cancel();
+                    timer.purge();
                 }
 
                 printGridState(currentTime, sender, action);
