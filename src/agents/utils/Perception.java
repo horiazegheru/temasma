@@ -4,10 +4,9 @@ import jade.core.AID;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Set;
 
 public class Perception implements Serializable {
-    public int currentTime;
+    public int operationTime;
     public int width;
     public int height;
     public ArrayList<GridPosition> obstacles = new ArrayList<>();
@@ -19,11 +18,11 @@ public class Perception implements Serializable {
     public String error;
     public ArrayList<AID> otherAgentAIDs;
 
-    public Perception(int currentTime, int width, int height, ArrayList<GridPosition> obstacles,
+    public Perception(int operationTime, int width, int height, ArrayList<GridPosition> obstacles,
                       ArrayList<Tile> tiles, ArrayList<Hole> holes, int points, GridPosition pos, Tile currentTile,
                       String error, ArrayList<AID> otherAgentAIDs) {
 
-        this.currentTime = currentTime;
+        this.operationTime = operationTime;
         this.width = width;
         this.height = height;
         this.obstacles = obstacles;
@@ -37,7 +36,7 @@ public class Perception implements Serializable {
     }
 
     public String toString() {
-        return "PERCEPTION ===> currentTime = " + currentTime + ", width = " + width + ", height = " + height + ", obstacles = " +
+        return "PERCEPTION ===> operationTime = " + operationTime + ", width = " + width + ", height = " + height + ", obstacles = " +
                 obstacles + ", tiles = " + tiles + ", holes = " + holes + ", points = " + points + ", pos = " + pos +
                 ", currentTile = " + currentTile + ", error = " + error + ", other agents = " + otherAgentAIDs;
     }

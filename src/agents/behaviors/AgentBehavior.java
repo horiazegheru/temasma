@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class AgentBehavior extends CyclicBehaviour {
     String color;
@@ -48,7 +49,7 @@ public class AgentBehavior extends CyclicBehaviour {
         aliveAgents = agentsNr;
     }
 
-    public Action chooseAction(Perception perception) {
+    public Action chooseAction(Perception perception) throws InterruptedException {
 
         // EXAMPLE WITH ACTIONS THAT MAKE GREEN AGENT GRAB A BLUE TILE AND PUT IT IN A BLUE HOLE
         // BLUE WILL DIE BECAUSE IT WILL GET AN ERROR (ACTIONS DO NOT MATCH)
@@ -98,7 +99,11 @@ public class AgentBehavior extends CyclicBehaviour {
             }
         }
 
-        return new Action("Fuck", "it");
+        if (color.equals("green")){
+            Thread.sleep(200);
+        }
+
+        return new Action("Move", "North");
 
         /*
         if (holeIWantToFill.pos.x < currentPosition.x) {
@@ -107,19 +112,19 @@ public class AgentBehavior extends CyclicBehaviour {
             if (holeIWantToFill.pos.x > )
 
 
-        if (perception.currentTime == 0)
+        if (perception.operationTime == 0)
             return new Action("Move", "South");
 
-        if (perception.currentTime == 300)
+        if (perception.operationTime == 300)
             return new Action("Move", "South");
 
-        if (perception.currentTime == 600)
+        if (perception.operationTime == 600)
             return new Action("Pick", "blue");
 
-        if (perception.currentTime == 900)
+        if (perception.operationTime == 900)
             return new Action("Move", "North");
 
-        if (perception.currentTime == 1200)
+        if (perception.operationTime == 1200)
             return new Action("Use_tile", "East");
 */
 /*        return new Action("Move", "West");*/
@@ -172,7 +177,7 @@ public class AgentBehavior extends CyclicBehaviour {
 
     }
 
-    public void sendAction(Perception perception) throws IOException {
+    public void sendAction(Perception perception) throws IOException, InterruptedException {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setProtocol(ENVACTION_PROTOCOL);
         msg.addReceiver(envAID);
@@ -184,7 +189,7 @@ public class AgentBehavior extends CyclicBehaviour {
         myAgent.send(msg);
     }
 
-    public void receivePerception() throws UnreadableException, IOException {
+    public void receivePerception() throws UnreadableException, IOException, InterruptedException {
         ACLMessage receivedMsg = myAgent.receive(msgTemplate);
         if (receivedMsg != null) {
             gotFirstEnvMessage = true;
@@ -199,13 +204,14 @@ public class AgentBehavior extends CyclicBehaviour {
             negotiate();
 
             if (perception.error != null) {
-                System.out.println("AGENT " + color  + " TERMINATING DUE TO ERROR..." + perception.error);
-                aliveAgents--;
-                myAgent.doDelete();
+                System.out.println("AGENT " + color  + " 's action FAILED due to ERROR..." + perception.error);
+//                aliveAgents--;
+//                myAgent.doDelete();
             }
 
             // DO SOMETHING WITH PERCEPTION
             sendAction(perception);
+            TimeUnit.MILLISECONDS.sleep(perception.operationTime);
         }
     }
 
@@ -249,6 +255,8 @@ public class AgentBehavior extends CyclicBehaviour {
         } catch (UnreadableException e) {
             e.printStackTrace();
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
         receiveTerminate();

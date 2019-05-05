@@ -1,5 +1,6 @@
 package agents;
 
+import FIPA.DateTime;
 import agents.behaviors.EnvironmentBehavior;
 import agents.model.Graph;
 import agents.model.Node;
@@ -44,8 +45,10 @@ public class EnvironmentAgent extends Agent {
         for (AID aid: aidPositions.keySet())
             aidsScores.put(aid, 0);
 
+        long startTime = new Date().getTime();
+
         addBehaviour(new EnvironmentBehavior(agentsNr, operationTime, totalTime, width, height, obstacles, tiles, holes,
-                aidsScores, aidPositions));
+                aidsScores, aidPositions, startTime));
     }
 
     private Graph createGraphForDijkstra() {
