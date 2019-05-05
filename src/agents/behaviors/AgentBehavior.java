@@ -1,18 +1,18 @@
 package agents.behaviors;
 
-import agents.utils.Action;
-import agents.utils.GridPosition;
-import agents.utils.Perception;
+import agents.utils.*;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+import jade.util.leap.Collection;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Collections;
+import java.util.List;
 
 public class AgentBehavior extends CyclicBehaviour {
     String color;
@@ -53,6 +53,60 @@ public class AgentBehavior extends CyclicBehaviour {
         // EXAMPLE WITH ACTIONS THAT MAKE GREEN AGENT GRAB A BLUE TILE AND PUT IT IN A BLUE HOLE
         // BLUE WILL DIE BECAUSE IT WILL GET AN ERROR (ACTIONS DO NOT MATCH)
 
+        GridPosition currentPosition = perception.pos;
+        List<Tile> tiles = perception.tiles;
+        List<Hole> holes = perception.holes;
+        ArrayList<GridPosition> obstacles = perception.obstacles;
+        Tile currentTile = perception.currentTile;
+
+        Hole holeIWantToFill = null;
+        if (currentTile == null) {
+            for (Hole hole : holes) {
+                System.out.println(hole);
+                if (hole.depth == 1 && hole.color.equals(color)) {
+                    holeIWantToFill = hole;
+                    System.out.println("Did I find a gole?");
+                }
+            }
+        }
+        if (holeIWantToFill != null) {
+            for (Tile tile : tiles) {
+                if (tile.color.equals(color)) {
+
+                    try {
+                        ArrayList<GridPosition> list = new ArrayList<>();
+                        validatePath(currentPosition, tile.pos, holes, obstacles, list);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+
+                    if (tile.pos.x < currentPosition.x) {
+                        return new Action("Move", "West");
+                    }
+                    if (tile.pos.x > currentPosition.x) {
+                        return new Action("Move", "East");
+                    }
+                    if (tile.pos.y < currentPosition.y) {
+                        return new Action("Move", "North");
+                    }
+                    if (tile.pos.y > currentPosition.y) {
+                        return new Action("Move", "South");
+                    }
+                    return new Action("Pick", color);
+                }
+            }
+        }
+
+        return new Action("Fuck", "it");
+
+        /*
+        if (holeIWantToFill.pos.x < currentPosition.x) {
+                return new Action("Move", "East");
+            }
+            if (holeIWantToFill.pos.x > )
+
+
         if (perception.currentTime == 0)
             return new Action("Move", "South");
 
@@ -67,8 +121,42 @@ public class AgentBehavior extends CyclicBehaviour {
 
         if (perception.currentTime == 1200)
             return new Action("Use_tile", "East");
+*/
+/*        return new Action("Move", "West");*/
+    }
 
-        return new Action("Move", "West");
+    private void validatePath(GridPosition currentPosition, GridPosition tilePos, List<Hole> holes, ArrayList<GridPosition> obstacles, List<GridPosition> path) throws Exception {
+        // todo change 4
+        if (currentPosition.x < 0 || currentPosition.x > 4 || currentPosition.y > 4  || currentPosition.y < 0) {
+            return;
+        }
+        if (tilePos.equals(currentPosition)) {
+            path.add(currentPosition);
+            return;
+        }
+        for (Hole hole : holes) {
+            if (hole.pos.equals(currentPosition)) {
+                return;
+            }
+        }
+        for (GridPosition obstacle : obstacles) {
+            if (obstacle.equals(currentPosition)) {
+                return;
+            }
+        }
+
+        for (int i = 0; i < 4; i++) {
+
+        }
+
+
+        System.out.println(currentPosition);
+        path.add(currentPosition);
+        validatePath(new GridPosition(currentPosition.x, currentPosition.y - 1), tilePos, holes, obstacles, path);
+        validatePath(new GridPosition(currentPosition.x, currentPosition.y + 1), tilePos, holes, obstacles, path);
+
+        validatePath(new GridPosition(currentPosition.x - 1, currentPosition.y), tilePos, holes, obstacles, path);
+        validatePath(new GridPosition(currentPosition.x + 1, currentPosition.y), tilePos, holes, obstacles, path);
     }
 
     public void sendAction(Perception perception) throws IOException {
@@ -88,6 +176,7 @@ public class AgentBehavior extends CyclicBehaviour {
         if (receivedMsg != null) {
             gotFirstEnvMessage = true;
             Perception perception = (Perception) receivedMsg.getContentObject();
+            System.out.println(perception);
            /*
             System.out.println(color + ": " + perception);
             System.out.println(color + " ERROR: " + perception.error);
