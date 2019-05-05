@@ -125,6 +125,13 @@ public class AgentBehavior extends CyclicBehaviour {
 /*        return new Action("Move", "West");*/
     }
 
+    private void findShortestPath() {
+
+    }
+
+
+
+
     private void validatePath(GridPosition currentPosition, GridPosition tilePos, List<Hole> holes, ArrayList<GridPosition> obstacles, List<GridPosition> path) throws Exception {
         // todo change 4
         if (currentPosition.x < 0 || currentPosition.x > 4 || currentPosition.y > 4  || currentPosition.y < 0) {
@@ -143,20 +150,26 @@ public class AgentBehavior extends CyclicBehaviour {
             if (obstacle.equals(currentPosition)) {
                 return;
             }
-        }
-
+        }/*
+        // todo 4 to grid sizes
         for (int i = 0; i < 4; i++) {
-
-        }
+            currentPosition.y--;
+        }*/
 
 
         System.out.println(currentPosition);
         path.add(currentPosition);
         validatePath(new GridPosition(currentPosition.x, currentPosition.y - 1), tilePos, holes, obstacles, path);
-        validatePath(new GridPosition(currentPosition.x, currentPosition.y + 1), tilePos, holes, obstacles, path);
+        System.out.println("de aici 1");
 
-        validatePath(new GridPosition(currentPosition.x - 1, currentPosition.y), tilePos, holes, obstacles, path);
+
+        validatePath(new GridPosition(currentPosition.x, currentPosition.y + 1), tilePos, holes, obstacles, path);
+        System.out.println("de aici 3");
         validatePath(new GridPosition(currentPosition.x + 1, currentPosition.y), tilePos, holes, obstacles, path);
+        System.out.println("de aici 4");
+        validatePath(new GridPosition(currentPosition.x - 1, currentPosition.y), tilePos, holes, obstacles, path);
+        System.out.println("de aici 2");
+
     }
 
     public void sendAction(Perception perception) throws IOException {

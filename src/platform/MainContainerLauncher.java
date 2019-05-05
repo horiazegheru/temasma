@@ -58,7 +58,7 @@ public class MainContainerLauncher
 	@SuppressWarnings("serial")
 
 	void readTest() throws IOException {
-		try (BufferedReader br = new BufferedReader(new FileReader("data/tests/system__default.txt"))) {
+		try (BufferedReader br = new BufferedReader(new FileReader("/home/marius/facultate/master/mas/temasma/data/tests/system__default.txt"))) {
 			String[] lineElems;
 			lineElems = br.readLine().split(" ");
 			agentsNr = Integer.parseInt(lineElems[0]);
