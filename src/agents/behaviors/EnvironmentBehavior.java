@@ -1,5 +1,6 @@
 package agents.behaviors;
 
+import FIPA.DateTime;
 import agents.MyAgent;
 import agents.utils.*;
 import jade.core.AID;
@@ -19,9 +20,7 @@ public class EnvironmentBehavior extends CyclicBehaviour {
     static final String AGENTTERMINATE_PROTOCOL = "terminate";
     private static final String EMPTY_CELL = "|        |";
     private static final String OBSTACLE = "|////////|";
-    private static final int TIMER_DELAY = 2000;
-
-    AtomicInteger recNr = new AtomicInteger();
+    private static final int TIMER_DELAY = 1000;
 
     private MessageTemplate msgTemplate			= MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
@@ -39,14 +38,17 @@ public class EnvironmentBehavior extends CyclicBehaviour {
     Map<AID, GridPosition> aidPositions = new HashMap<>();
     Map<AID, Tile> aidTiles = new HashMap<>();
     Map<AID, String> aidErrors = new HashMap<>();
-    ArrayList<AID> toStopMessaging = new ArrayList<>();
+    Map<AID, Perception> aidPerceptions = new HashMap<>();
     ArrayList<AID> otherAgents = new ArrayList<>();
+    boolean firstPerceptionRound = false;
 
-    int currentTime = 0;
+    long startTime;
+    long currentTime;
 
     public EnvironmentBehavior(int agentsNr, int operationTime, int totalTime, int width, int height,
                                ArrayList<GridPosition> obstacles, ArrayList<Tile> tiles, ArrayList<Hole> holes,
-                               Map<AID, Integer> aidsScores, Map<AID, GridPosition> aidPositions) {
+                               Map<AID, Integer> aidsScores, Map<AID, GridPosition> aidPositions,
+                               long startTime) {
 
         this.agentsNr = agentsNr;
         this.operationTime = operationTime;
@@ -58,6 +60,7 @@ public class EnvironmentBehavior extends CyclicBehaviour {
         this.holes = holes;
         this.aidsScores = aidsScores;
         this.aidPositions = aidPositions;
+        this.startTime = startTime;
 
         for (AID aid: aidsScores.keySet()) {
             aidErrors.put(aid, null);
@@ -83,32 +86,27 @@ public class EnvironmentBehavior extends CyclicBehaviour {
         */
     }
 
-    public void sendPerception() throws IOException {
-        if (recNr.get() == 0) {
-            for (AID aid : aidsScores.keySet()) {
-                if (!toStopMessaging.contains(aid)) {
-                    recNr.getAndIncrement();
-                    ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-                    msg.setProtocol(AGENTPERCEPT_PROTOCOL);
-                    msg.addReceiver(aid);
+    public void sendPerception(AID aid) throws IOException {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.setProtocol(AGENTPERCEPT_PROTOCOL);
+        msg.addReceiver(aid);
 
-                    // SEND PERCEPTION TO ALL AGENTS
-                    Perception perception = new Perception(currentTime, width, height, obstacles,
-                            tiles, holes, aidsScores.get(aid), aidPositions.get(aid), aidTiles.get(aid),
-                            aidErrors.get(aid), otherAgents);
-                    msg.setContentObject(perception);
+        // SEND PERCEPTION TO ALL AGENTS
 
-                    if (aidErrors.get(aid) != null) {
-                        toStopMessaging.add(aid);
-                    }
-                    myAgent.send(msg);
-                }
-            }
+        if (aidErrors.get(aid) != null) {
+            Perception oldPerception = aidPerceptions.get(aid);
+            oldPerception.error = aidErrors.get(aid);
+            msg.setContentObject(oldPerception);
+        } else {
+            Perception perception = new Perception(operationTime, width, height, obstacles,
+                    tiles, holes, aidsScores.get(aid), aidPositions.get(aid), aidTiles.get(aid),
+                    aidErrors.get(aid), otherAgents);
 
-            if (toStopMessaging.size() == agentsNr) {
-                myAgent.doDelete();
-            }
+            msg.setContentObject(perception);
+            aidPerceptions.put(aid, perception);
         }
+
+        myAgent.send(msg);
     }
 
     public void sendTerminate() {
@@ -124,22 +122,28 @@ public class EnvironmentBehavior extends CyclicBehaviour {
     public void receiveAction() throws InterruptedException, UnreadableException {
             ACLMessage receivedMsg = myAgent.receive(msgTemplate);
             if (receivedMsg != null) {
-                recNr.getAndDecrement();
                 Action action = (Action) receivedMsg.getContentObject();
                 AID sender = receivedMsg.getSender();
                 String errorMessage = executeAction(sender, action);
                 aidErrors.put(sender, errorMessage);
 
-                if (recNr.get() == 0) {
-                    currentTime += operationTime;
-                    // IF TIME IS OUT, INFORM EVERYONE AND EXIT
-                    if (currentTime > totalTime) {
-                        System.out.println("ENV SAYS TIMEOUT, TERMINATING....");
-                        sendTerminate();
-                        myAgent.doDelete();
-                    }
+                currentTime = new Date().getTime() - startTime;
+                // IF TIME IS OUT, INFORM EVERYONE AND EXIT
+
+                if (currentTime > totalTime) {
+                    System.out.println("ENV SAYS TIMEOUT, TERMINATING....");
+                    sendTerminate();
+                    myAgent.doDelete();
                 }
+
                 printGridState(currentTime, sender, action);
+
+                try {
+                    sendPerception(sender);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
             }
     }
 
@@ -341,14 +345,12 @@ public class EnvironmentBehavior extends CyclicBehaviour {
         if (action.actionName.equals("Move"))
             errorMessage = executeMove(sender, action);
 
-        TimeUnit.MILLISECONDS.sleep(operationTime);
-
         return errorMessage;
     }
 
-    public void printGridState(int currentTime, AID aidParam, Action action) {
+    public void printGridState(long currentTime, AID aidParam, Action action) {
 
-        System.out.println("Currently " + "[" + aidParam.getLocalName() + "]" + " wants to : " + action.actionName + " " + action.arg1);
+        System.out.println("[" + (float)currentTime / 1000+ "]"  + " [" + aidParam.getLocalName() + "]" + " wants to : " + action.actionName + " " + action.arg1);
     }
     public void printGrid() {
 
@@ -415,7 +417,7 @@ public class EnvironmentBehavior extends CyclicBehaviour {
             }
 
         }
-        System.out.println("\n[ENV] current time: " + currentTime + "\n");
+        System.out.println("\n[ENV] current time: " + (float) currentTime / 1000 + "\n");
     }
 
     private boolean printHoles(int i, int realWidith, int j, boolean printed,
@@ -511,11 +513,17 @@ public class EnvironmentBehavior extends CyclicBehaviour {
 
     @Override
     public void action() {
-        try {
-            sendPerception();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (!firstPerceptionRound) {
+            for (AID aid: aidsScores.keySet()) {
+                try {
+                    sendPerception(aid);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            firstPerceptionRound = true;
         }
+
         try {
             receiveAction();
         } catch (InterruptedException e) {
