@@ -1,5 +1,6 @@
 package agents.utils;
 
+import agents.model.Graph;
 import jade.core.AID;
 
 import java.io.Serializable;
@@ -17,10 +18,11 @@ public class Perception implements Serializable {
     public Tile currentTile;
     public String error;
     public ArrayList<AID> otherAgentAIDs;
+    public Graph graph;
 
     public Perception(int operationTime, int width, int height, ArrayList<GridPosition> obstacles,
                       ArrayList<Tile> tiles, ArrayList<Hole> holes, int points, GridPosition pos, Tile currentTile,
-                      String error, ArrayList<AID> otherAgentAIDs) {
+                      String error, ArrayList<AID> otherAgentAIDs, Graph graph) {
 
         this.operationTime = operationTime;
         this.width = width;
@@ -33,6 +35,7 @@ public class Perception implements Serializable {
         this.currentTile = currentTile;
         this.error = error;
         this.otherAgentAIDs = otherAgentAIDs;
+        this.graph = graph;
     }
 
     public String toString() {

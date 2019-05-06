@@ -11,8 +11,9 @@ public class GridPosition implements Serializable {
 		this.y = y;
 	}
 
+	@Override
 	public String toString() {
-		return this.x + " " + this.y;
+		return "{" + x + " " + y + '}';
 	}
 
 	public boolean equals(Object o) {

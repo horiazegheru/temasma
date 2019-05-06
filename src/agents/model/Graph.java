@@ -1,6 +1,8 @@
 package agents.model;
 
-public class Graph {
+import java.io.Serializable;
+
+public class Graph implements Serializable {
 
     private Node root;
 
@@ -14,6 +16,6 @@ public class Graph {
 
     @Override
     public String toString() {
-
+        return root.toString();
     }
 }

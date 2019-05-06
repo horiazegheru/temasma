@@ -1,21 +1,27 @@
 package agents.behaviors;
 
+import agents.model.Edge;
+import agents.model.Graph;
+import agents.model.Node;
 import agents.utils.*;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
-import jade.util.leap.Collection;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class AgentBehavior extends CyclicBehaviour {
+    public static final int BIG_DISTANCE = 100000;
     String color;
     GridPosition pos;
     AID envAID;
@@ -71,16 +77,11 @@ public class AgentBehavior extends CyclicBehaviour {
             }
         }
         if (holeIWantToFill != null) {
+
             for (Tile tile : tiles) {
                 if (tile.color.equals(color)) {
 
-                    try {
-                        ArrayList<GridPosition> list = new ArrayList<>();
-                        validatePath(currentPosition, tile.pos, holes, obstacles, list);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
+                    findShortestPath(currentPosition, tile.pos, perception.graph);
 
                     if (tile.pos.x < currentPosition.x) {
                         return new Action("Move", "West");
@@ -130,51 +131,85 @@ public class AgentBehavior extends CyclicBehaviour {
 /*        return new Action("Move", "West");*/
     }
 
-    private void findShortestPath() {
+    private void findShortestPath(GridPosition currentPosition, GridPosition pos, Graph graph) {
 
+        Node startingNode = getStartingNode(currentPosition, graph);
+
+        Set<Node> settledNodes = new HashSet<>();
+        Set<Node> unsettledNodes = new HashSet<>();
+        Map<Node, Integer> distance = new HashMap<>();
+        distance.put(startingNode, 0);
+        unsettledNodes.add(startingNode);
+
+        while (unsettledNodes.size() > 0) {
+            System.out.println("nelinistiti " + unsettledNodes);
+            Node evalNode = getMinDistanceNode(unsettledNodes, distance);
+            unsettledNodes.remove(evalNode);
+            settledNodes.add(evalNode);
+            evaluateNeighbours(evalNode, settledNodes, unsettledNodes, distance);
+        }
+        System.out.println("oare a mers cacatul? " + distance);
     }
 
+    private Node getStartingNode(GridPosition currentPosition, Graph graph) {
+        Node root = graph.getRoot();
+        Node startingNode = null;
 
-
-
-    private void validatePath(GridPosition currentPosition, GridPosition tilePos, List<Hole> holes, ArrayList<GridPosition> obstacles, List<GridPosition> path) throws Exception {
-        // todo change 4
-        if (currentPosition.x < 0 || currentPosition.x > 4 || currentPosition.y > 4  || currentPosition.y < 0) {
-            return;
+        Map<Node, Boolean> visited = new HashMap<>();
+        List<Node> toVisit = new ArrayList<>();
+        toVisit.add(root);
+        while (!toVisit.isEmpty()) {
+            Node currentNode = toVisit.get(0);
+            if (currentNode.getPosition().equals(currentPosition)) {
+                startingNode = currentNode;
+                break;
+            }
+            List<Edge> kidos = currentNode.getChildren();
+            kidos.forEach(kid -> {
+                if (!Boolean.TRUE.equals(visited.get(kid.getNode()))) {
+                    visited.put(kid.getNode(), Boolean.TRUE);
+                    toVisit.add(kid.getNode());
+                }
+            });
+            toVisit.remove(0);
         }
-        if (tilePos.equals(currentPosition)) {
-            path.add(currentPosition);
-            return;
-        }
-        for (Hole hole : holes) {
-            if (hole.pos.equals(currentPosition)) {
-                return;
+        System.out.println("found the cockfucker " + startingNode);
+        return startingNode;
+    }
+
+    private Node getMinDistanceNode(Set<Node> unsettledNodes, Map<Node, Integer> distance) {
+        int minDistance = Integer.MAX_VALUE;
+        Node shortestNode = null;
+        for (Node node : unsettledNodes) {
+            if (distance.get(node) < minDistance) {
+                minDistance = distance.get(node);
+                shortestNode = node;
             }
         }
-        for (GridPosition obstacle : obstacles) {
-            if (obstacle.equals(currentPosition)) {
-                return;
+        return shortestNode;
+    }
+
+    private void evaluateNeighbours(Node evalNode, Set<Node> settledNodes,
+            Set<Node> unsettledNodes, Map<Node, Integer> distance) {
+        List<Edge> adjacentNodes = evalNode.getChildren();
+        for (Edge destNode : adjacentNodes) {
+            if (!settledNodes.contains(destNode.getNode())) {
+                Integer dist = distance.get(destNode.getNode());
+                if (dist == null) {
+                    dist = 0;
+                }
+                if (destNode.getNode().getNodeType().equals("HOLE")) {
+                    dist += BIG_DISTANCE;
+                } else {
+                    dist += 1;
+                }
+                if (distance.get(destNode.getNode()) == null || distance.get(destNode.getNode())> dist) {
+                    System.out.println("morti matii " + destNode.getNode());
+                    distance.put(destNode.getNode(), dist);
+                    unsettledNodes.add(destNode.getNode());
+                }
             }
-        }/*
-        // todo 4 to grid sizes
-        for (int i = 0; i < 4; i++) {
-            currentPosition.y--;
-        }*/
-
-
-        System.out.println(currentPosition);
-        path.add(currentPosition);
-        validatePath(new GridPosition(currentPosition.x, currentPosition.y - 1), tilePos, holes, obstacles, path);
-        System.out.println("de aici 1");
-
-
-        validatePath(new GridPosition(currentPosition.x, currentPosition.y + 1), tilePos, holes, obstacles, path);
-        System.out.println("de aici 3");
-        validatePath(new GridPosition(currentPosition.x + 1, currentPosition.y), tilePos, holes, obstacles, path);
-        System.out.println("de aici 4");
-        validatePath(new GridPosition(currentPosition.x - 1, currentPosition.y), tilePos, holes, obstacles, path);
-        System.out.println("de aici 2");
-
+        }
     }
 
     public void sendAction(Perception perception) throws IOException, InterruptedException {

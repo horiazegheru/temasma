@@ -2,6 +2,10 @@ package agents;
 
 import FIPA.DateTime;
 import agents.behaviors.EnvironmentBehavior;
+import agents.disjktra.EdgeNou;
+import agents.disjktra.GraphNou;
+import agents.disjktra.Vertex;
+import agents.model.Edge;
 import agents.model.Graph;
 import agents.model.Node;
 import agents.utils.GridPosition;
@@ -40,7 +44,24 @@ public class EnvironmentAgent extends Agent {
         HashMap<AID, GridPosition> aidPositions = (HashMap<AID, GridPosition>) getArguments()[8];
 
         Graph graph = createGraphForDijkstra();
-        System.out.println("Graful meu fufu" + graph);
+        Node root = graph.getRoot();
+        System.out.println("Graful meu fuTuT");
+        Map<Node, Boolean> done = new HashMap<>();
+        List<Node> toPrint = new ArrayList<>();
+        toPrint.add(root);
+        while (!toPrint.isEmpty()) {
+            Node currentNode = toPrint.get(0);
+            System.out.println(currentNode);
+            List<Edge> kidos = currentNode.getChildren();
+            kidos.forEach(kid -> {
+                if (!Boolean.TRUE.equals(done.get(kid.getNode()))) {
+                    done.put(kid.getNode(), Boolean.TRUE);
+                    toPrint.add(kid.getNode());
+                }
+            });
+            toPrint.remove(0);
+        }
+
 
         for (AID aid: aidPositions.keySet())
             aidsScores.put(aid, 0);
@@ -48,16 +69,37 @@ public class EnvironmentAgent extends Agent {
         long startTime = new Date().getTime();
 
         addBehaviour(new EnvironmentBehavior(agentsNr, operationTime, totalTime, width, height, obstacles, tiles, holes,
-                aidsScores, aidPositions, startTime));
+                aidsScores, aidPositions, startTime, graph));
     }
 
     private Graph createGraphForDijkstra() {
-        Graph graph = new Graph();
-        List<Node> allNodes = new ArrayList<>();
+
+        List<Vertex> nodes = new ArrayList<>();
+        List<EdgeNou> edges = new ArrayList<>();
+
 
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
+                Vertex vertex  = new Vertex(new GridPosition(i, j));
+                nodes.add(vertex);
+            }
+        }
+
+
+
+        GraphNou graphNou = new GraphNou(nodes, edges);
+
+
+        Graph graph = new Graph();
+        List<Node> allNodes = new ArrayList<>();
+
+/*        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+
                 GridPosition currentPosition = new GridPosition(i, j);
+                if (obstacles.stream().anyMatch(obstacle -> currentPosition.equals(obstacle))) {
+                    continue;
+                }
                 Node node = new Node();
                 node.setPosition(currentPosition);
                 node.setNodeType("SIMPLE");
@@ -69,28 +111,41 @@ public class EnvironmentAgent extends Agent {
                 }
                 allNodes.add(node);
             }
+        }*/
+
+        for (Vertex vertex : nodes) {
+            for (Vertex children : nodes) {
+                if (isUpperOrLower(vertex, children)) {
+                    /*children.setParent(node);*/
+                    edges.add(new EdgeNou(vertex, children, getCost(children)));
+                }
+                if (isLeftOrRight(vertex, children)) {
+                    /*children.setParent(node);*/
+                    edges.add(new EdgeNou(vertex, children, getCost(children)));
+                }
         }
-        for (Node node : allNodes) {
+        }
+
+      /*  for (Node node : allNodes) {
             if (node.getPosition().x == 0 && node.getPosition().y == 0) {
                 node.setParent(null);
                 graph.setRoot(node);
             }
             for (Node children : allNodes) {
                 if (isUpperOrLower(node, children)) {
-                    children.setParent(node);
+                    *//*children.setParent(node);*//*
                     node.addChildren(children, getCost(children));
                 }
                 if (isLeftOrRight(node, children)) {
-                    children.setParent(node);
+                    *//*children.setParent(node);*//*
                     node.addChildren(children, getCost(children));
                 }
-
             }
-        }
+        }*/
         return graph;
     }
 
-    private int getCost(Node children) {
+    private int getCost(Vertex children) {
         return Arrays.asList("TILE", "HOLE").contains(children.getNodeType()) ? Integer.MAX_VALUE : 0;
     }
 
@@ -103,14 +158,14 @@ public class EnvironmentAgent extends Agent {
         System.out.println("ENV ENDED");
     }
 
-    private boolean isUpperOrLower(Node node, Node children) {
-        return children.getPosition().x == node.getPosition().x - 1 || children.getPosition().x == node.getPosition().x + 1 &&
-                children.getPosition().y == node.getPosition().y && children.getParent() == null;
+    private boolean isUpperOrLower(Vertex node, Vertex children) {
+        return ((children.getPosition().x == node.getPosition().x - 1 || children.getPosition().x == node.getPosition().x + 1) &&
+                children.getPosition().y == node.getPosition().y);
     }
 
-    private boolean isLeftOrRight(Node node, Node children) {
-        return (children.getPosition().y == node.getPosition().y - 1 || children.getPosition().y == node.getPosition().y + 1) &&
-                children.getPosition().x == node.getPosition().x && children.getParent() == null;
+    private boolean isLeftOrRight(Vertex node, Vertex children) {
+        return ((children.getPosition().y == node.getPosition().y - 1 || children.getPosition().y == node.getPosition().y + 1) &&
+                children.getPosition().x == node.getPosition().x);
     }
 
 

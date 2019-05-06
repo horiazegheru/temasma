@@ -1,6 +1,8 @@
 package agents.model;
 
-public class Edge {
+import java.io.Serializable;
+
+public class Edge implements Serializable {
     private Node node;
     private int cost;
 
@@ -23,5 +25,9 @@ public class Edge {
 
     public void setCost(int cost) {
         this.cost = cost;
+    }
+
+    @Override public String toString() {
+        return "EdgeNou{" + "node=" + node + ", cost=" + cost + '}';
     }
 }

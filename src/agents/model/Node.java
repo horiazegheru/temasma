@@ -2,10 +2,12 @@ package agents.model;
 
 import agents.utils.GridPosition;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class Node {
+public class Node implements Serializable {
 
     private GridPosition position;
 
@@ -52,5 +54,12 @@ public class Node {
 
     public void setParent(Node parent) {
         this.parent = parent;
+    }
+
+    @Override
+    public String toString() {
+        List<String> kidos = children.stream().map(Edge::getNode).map(Node::getPosition)
+                .map(GridPosition::toString).collect(Collectors.toList());
+        return String.format("[ position :  %s type : %s adjacent nodes : %s]", position, nodeType, kidos);
     }
 }

@@ -2,6 +2,7 @@ package agents.behaviors;
 
 import FIPA.DateTime;
 import agents.MyAgent;
+import agents.model.Graph;
 import agents.utils.*;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
@@ -41,15 +42,15 @@ public class EnvironmentBehavior extends CyclicBehaviour {
     Map<AID, Perception> aidPerceptions = new HashMap<>();
     ArrayList<AID> otherAgents = new ArrayList<>();
     boolean firstPerceptionRound = false;
+    Graph graph;
 
     long startTime;
     long currentTime;
     Timer timer = new Timer();
 
     public EnvironmentBehavior(int agentsNr, int operationTime, int totalTime, int width, int height,
-                               ArrayList<GridPosition> obstacles, ArrayList<Tile> tiles, ArrayList<Hole> holes,
-                               Map<AID, Integer> aidsScores, Map<AID, GridPosition> aidPositions,
-                               long startTime) {
+            ArrayList<GridPosition> obstacles, ArrayList<Tile> tiles, ArrayList<Hole> holes, Map<AID, Integer> aidsScores,
+            Map<AID, GridPosition> aidPositions, long startTime, Graph graph) {
 
         this.agentsNr = agentsNr;
         this.operationTime = operationTime;
@@ -62,7 +63,7 @@ public class EnvironmentBehavior extends CyclicBehaviour {
         this.aidsScores = aidsScores;
         this.aidPositions = aidPositions;
         this.startTime = startTime;
-
+        this.graph = graph;
         for (AID aid: aidsScores.keySet()) {
             aidErrors.put(aid, null);
             otherAgents.add(aid);
@@ -101,7 +102,7 @@ public class EnvironmentBehavior extends CyclicBehaviour {
         } else {
             Perception perception = new Perception(operationTime, width, height, obstacles,
                     tiles, holes, aidsScores.get(aid), aidPositions.get(aid), aidTiles.get(aid),
-                    aidErrors.get(aid), otherAgents);
+                    aidErrors.get(aid), otherAgents, graph);
 
             msg.setContentObject(perception);
             aidPerceptions.put(aid, perception);
