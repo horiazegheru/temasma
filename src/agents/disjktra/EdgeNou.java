@@ -1,9 +1,11 @@
 package agents.disjktra;
 
-public class EdgeNou {
+import java.io.Serializable;
+
+public class EdgeNou implements Serializable {
     private final Vertex source;
     private final Vertex destination;
-    private final int weight;
+    private int weight;
 
     public EdgeNou(Vertex source, Vertex destination, int weight) {
         this.source = source;
@@ -20,10 +22,15 @@ public class EdgeNou {
     public int getWeight() {
         return weight;
     }
+    public void setWeight(int weight) {
+        this.weight = weight;
+    }
+
+
 
     @Override
     public String toString() {
-        return source + " " + destination;
+        return "source : " + source + " destination : " + destination;
     }
 
 

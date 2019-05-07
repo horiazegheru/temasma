@@ -2,6 +2,7 @@ package agents.behaviors;
 
 import FIPA.DateTime;
 import agents.MyAgent;
+import agents.disjktra.GraphNou;
 import agents.model.Graph;
 import agents.utils.*;
 import jade.core.AID;
@@ -42,7 +43,7 @@ public class EnvironmentBehavior extends CyclicBehaviour {
     Map<AID, Perception> aidPerceptions = new HashMap<>();
     ArrayList<AID> otherAgents = new ArrayList<>();
     boolean firstPerceptionRound = false;
-    Graph graph;
+    GraphNou graph;
 
     long startTime;
     long currentTime;
@@ -50,7 +51,7 @@ public class EnvironmentBehavior extends CyclicBehaviour {
 
     public EnvironmentBehavior(int agentsNr, int operationTime, int totalTime, int width, int height,
             ArrayList<GridPosition> obstacles, ArrayList<Tile> tiles, ArrayList<Hole> holes, Map<AID, Integer> aidsScores,
-            Map<AID, GridPosition> aidPositions, long startTime, Graph graph) {
+            Map<AID, GridPosition> aidPositions, long startTime, GraphNou graph) {
 
         this.agentsNr = agentsNr;
         this.operationTime = operationTime;
@@ -270,8 +271,8 @@ public class EnvironmentBehavior extends CyclicBehaviour {
             toDrop.pos = newPos;
             tiles.add(toDrop);
         }
-
-        aidTiles.put(sender, null);
+        aidTiles.remove(sender);
+        /*aidTiles.put(sender, null);*/
         return null;
     }
 
@@ -297,7 +298,8 @@ public class EnvironmentBehavior extends CyclicBehaviour {
                     }
 
                     hole.depth -= 1;
-                    aidTiles.put(sender, null);
+                    /*aidTiles.put(sender, null);*/
+                    aidTiles.remove(sender);
 
                     if (hole.depth == 0) {
                         toRemoveHoles.add(hole);
@@ -314,6 +316,15 @@ public class EnvironmentBehavior extends CyclicBehaviour {
 
         for (Hole hole: toRemoveHoles) {
             holes.remove(hole);
+            graph.getVertexes().forEach(vertex -> {
+                if (vertex.getPosition().equals(hole.pos)) {
+                    graph.getEdges().forEach(edgeNou -> {
+                        if (edgeNou.getSource().equals(vertex) || edgeNou.getDestination().equals(vertex)) {
+                            edgeNou.setWeight(1);
+                        }
+                    });
+                }
+            });
         }
 
         if (!holeExists)

@@ -1,8 +1,8 @@
 package agents.behaviors;
 
-import agents.model.Edge;
-import agents.model.Graph;
-import agents.model.Node;
+import agents.disjktra.DijkstraAlgorithm;
+import agents.disjktra.GraphNou;
+import agents.disjktra.Vertex;
 import agents.utils.*;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
@@ -13,12 +13,10 @@ import jade.lang.acl.UnreadableException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class AgentBehavior extends CyclicBehaviour {
     public static final int BIG_DISTANCE = 100000;
@@ -65,151 +63,183 @@ public class AgentBehavior extends CyclicBehaviour {
         List<Hole> holes = perception.holes;
         ArrayList<GridPosition> obstacles = perception.obstacles;
         Tile currentTile = perception.currentTile;
-
+        GraphNou graph = perception.graph;
+        Vertex startingNode = null;
+        for (Vertex vertex : graph.getVertexes()) {
+            if (vertex.getPosition().equals(currentPosition)) {
+                startingNode = vertex;
+                break;
+            }
+        }
+        DijkstraAlgorithm djkaAlg = new DijkstraAlgorithm(graph);
+        djkaAlg.execute(startingNode);
         Hole holeIWantToFill = null;
+        System.out.println("am ion mana " + currentTile);
         if (currentTile == null) {
             for (Hole hole : holes) {
+/*
                 System.out.println(hole);
-                if (hole.depth == 1 && hole.color.equals(color)) {
+*/
+                if (/*hole.depth == 1 && */hole.color.equals(color)) {
                     holeIWantToFill = hole;
-                    System.out.println("Did I find a gole?");
                 }
             }
-        }
-        if (holeIWantToFill != null) {
-
-            for (Tile tile : tiles) {
-                if (tile.color.equals(color)) {
-
-                    findShortestPath(currentPosition, tile.pos, perception.graph);
-
-                    if (tile.pos.x < currentPosition.x) {
-                        return new Action("Move", "West");
+            if (holeIWantToFill != null) {
+                Tile tileIwillBeUsing = null;
+                Vertex nodeOfTile = null;
+                for (Tile tile : tiles) {
+                    Integer minDistanceTale = Integer.MAX_VALUE;
+                    if (tile.color.equals(color)) {
+                        nodeOfTile = getClosestTile(graph, djkaAlg, nodeOfTile, tile, minDistanceTale);
+                        tileIwillBeUsing = tile;
                     }
-                    if (tile.pos.x > currentPosition.x) {
-                        return new Action("Move", "East");
+                }
+                if (nodeOfTile == null) {
+                    int minDistanceTale = 1000000;
+                    for (Tile tile : tiles) {
+                        for (Vertex vertex : graph.getVertexes()) {
+                            if (vertex.getPosition().equals(tile.pos)) {
+                                Integer dist = djkaAlg.getDistance().get(vertex);
+                                if (dist < minDistanceTale) {
+                                    nodeOfTile = vertex;
+                                    tileIwillBeUsing = tile;
+                                }
+                                break;
+                            }
+                        }
                     }
-                    if (tile.pos.y < currentPosition.y) {
-                        return new Action("Move", "North");
+                }
+                if (nodeOfTile != null) {
+                    LinkedList<Vertex> path = djkaAlg.getPath(nodeOfTile);
+                    /*System.out.println("am gasit pathul plii plsss <# ");
+                    System.out.println(path);*/
+                    if (path != null && path.size() > 1) {
+                        GridPosition nextPosition = path.get(1).getPosition();
+                        /*System.out
+                                .println("I am " + color + " and looking to go to " + nextPosition);*/
+                        Action x = determineMoveAccordingToNextPosition(currentPosition, nextPosition);
+                        if (x != null)
+                            return x;
+                    } else {
+                        return new Action("Pick", tileIwillBeUsing.color);
                     }
-                    if (tile.pos.y > currentPosition.y) {
-                        return new Action("Move", "South");
-                    }
-                    return new Action("Pick", color);
                 }
             }
-        }
+        } else {
+            String tileColor = currentTile.color;
+            if (tileColor.equals(color)) {
+                List<Hole> holesToFill = holes.stream().filter(hole -> hole.color.equals(color)).collect(Collectors.toList());
+                Integer minDistanceTale = 1000000;
+                Vertex nodeOfHole = null;
+                nodeOfHole = getClosestHole(graph, djkaAlg, holesToFill, minDistanceTale);
+                /*System.out.println(djkaAlg);
+                System.out.println("gaura curului " + nodeOfHole + " din " + holeIWantToFill);*/
+                if (nodeOfHole == null) {
+                    nodeOfHole = getClosestHole(graph, djkaAlg, holes, minDistanceTale);
+                }
+                if (nodeOfHole != null) {
+                    LinkedList<Vertex> path = djkaAlg.getPath(nodeOfHole);
 
+/*
+                    System.out.println("am gasit pathul plii spre gaura <# ");
+*/
+                    System.out.println(path);
+                    if (path != null && path.size() > 1 && !"HOLE".equals(path.get(1).getNodeType())) {
+                        GridPosition nextPosition = path.get(1).getPosition();
+/*
+                        System.out.println("I am " + color + " and looking to go to " + nextPosition);
+*/
+                        Action x = determineMoveAccordingToNextPosition(currentPosition, nextPosition);
+                        if (x != null)
+                            return x;
+                    } else {
+                        GridPosition nextPosition = path.get(1).getPosition();
+                        Action x = determineMoveAccordingToNextPosition(currentPosition, nextPosition);
+                        return new Action("Use_tile", x.arg1);
+                    }
+                }
+            } else {
+                Vertex nodeOfHole = getClosestHole(graph, djkaAlg, holes, 1000000);
+                if (nodeOfHole != null) {
+                    Action x = gotToHoleOrFillHole(currentPosition, djkaAlg, nodeOfHole);
+                    if (x != null)
+                        return x;
+                }
+            }
+
+        }
         if (color.equals("green")){
             Thread.sleep(200);
         }
-
-        return new Action("Move", "North");
-
-        /*
-        if (holeIWantToFill.pos.x < currentPosition.x) {
-                return new Action("Move", "East");
-            }
-            if (holeIWantToFill.pos.x > )
-
-
-        if (perception.operationTime == 0)
-            return new Action("Move", "South");
-
-        if (perception.operationTime == 300)
-            return new Action("Move", "South");
-
-        if (perception.operationTime == 600)
-            return new Action("Pick", "blue");
-
-        if (perception.operationTime == 900)
-            return new Action("Move", "North");
-
-        if (perception.operationTime == 1200)
-            return new Action("Use_tile", "East");
-*/
-/*        return new Action("Move", "West");*/
+        return currentPosition.y % 2 == 0 ? new Action("Move", "North") : new Action("Move", "South");
     }
 
-    private void findShortestPath(GridPosition currentPosition, GridPosition pos, Graph graph) {
+    private Action gotToHoleOrFillHole(GridPosition currentPosition, DijkstraAlgorithm djkaAlg,
+            Vertex nodeOfHole) {
+        LinkedList<Vertex> path = djkaAlg.getPath(nodeOfHole);
 
-        Node startingNode = getStartingNode(currentPosition, graph);
-
-        Set<Node> settledNodes = new HashSet<>();
-        Set<Node> unsettledNodes = new HashSet<>();
-        Map<Node, Integer> distance = new HashMap<>();
-        distance.put(startingNode, 0);
-        unsettledNodes.add(startingNode);
-
-        while (unsettledNodes.size() > 0) {
-            System.out.println("nelinistiti " + unsettledNodes);
-            Node evalNode = getMinDistanceNode(unsettledNodes, distance);
-            unsettledNodes.remove(evalNode);
-            settledNodes.add(evalNode);
-            evaluateNeighbours(evalNode, settledNodes, unsettledNodes, distance);
+        System.out.println("am gasit pathul plii spre gaura <# ");
+        System.out.println(path);
+        if (path != null && path.size() > 1 && !"HOLE".equals(path.get(1).getNodeType())) {
+            GridPosition nextPosition = path.get(1).getPosition();
+            System.out.println("I am " + color + " and looking to go to " + nextPosition);
+            Action x = determineMoveAccordingToNextPosition(currentPosition, nextPosition);
+            if (x != null)
+                return x;
+        } else {
+            GridPosition nextPosition = path.get(1).getPosition();
+            Action x = determineMoveAccordingToNextPosition(currentPosition, nextPosition);
+            return new Action("Use_tile", x.arg1);
         }
-        System.out.println("oare a mers cacatul? " + distance);
+        return null;
     }
 
-    private Node getStartingNode(GridPosition currentPosition, Graph graph) {
-        Node root = graph.getRoot();
-        Node startingNode = null;
+    private Vertex getClosestHole(GraphNou graph, DijkstraAlgorithm djkaAlg, List<Hole> holesToFill,
+            Integer minDistanceTale) {
+        Vertex nodeOfHole = null;
+        for (Hole holeToFill : holesToFill) {
+            for (Vertex vertex : graph.getVertexes()) {
+                if (vertex.getPosition().equals(holeToFill.pos)) {
+                    Integer dist = djkaAlg.getDistance().get(vertex);
+                    if (dist < minDistanceTale) {
+                        nodeOfHole = vertex;
+                    }
+                    break;
+                }
+            }
+        }
+        return nodeOfHole;
+    }
 
-        Map<Node, Boolean> visited = new HashMap<>();
-        List<Node> toVisit = new ArrayList<>();
-        toVisit.add(root);
-        while (!toVisit.isEmpty()) {
-            Node currentNode = toVisit.get(0);
-            if (currentNode.getPosition().equals(currentPosition)) {
-                startingNode = currentNode;
+    private Vertex getClosestTile(GraphNou graph, DijkstraAlgorithm djkaAlg, Vertex nodeOfTile,
+            Tile tile, Integer minDistanceTale) {
+        for (Vertex vertex : graph.getVertexes()) {
+            if (vertex.getPosition().equals(tile.pos)) {
+                Integer dist = djkaAlg.getDistance().get(vertex);
+                if (dist < minDistanceTale) {
+                    nodeOfTile = vertex;
+                }
                 break;
             }
-            List<Edge> kidos = currentNode.getChildren();
-            kidos.forEach(kid -> {
-                if (!Boolean.TRUE.equals(visited.get(kid.getNode()))) {
-                    visited.put(kid.getNode(), Boolean.TRUE);
-                    toVisit.add(kid.getNode());
-                }
-            });
-            toVisit.remove(0);
         }
-        System.out.println("found the cockfucker " + startingNode);
-        return startingNode;
+        return nodeOfTile;
     }
 
-    private Node getMinDistanceNode(Set<Node> unsettledNodes, Map<Node, Integer> distance) {
-        int minDistance = Integer.MAX_VALUE;
-        Node shortestNode = null;
-        for (Node node : unsettledNodes) {
-            if (distance.get(node) < minDistance) {
-                minDistance = distance.get(node);
-                shortestNode = node;
-            }
+    private Action determineMoveAccordingToNextPosition(GridPosition currentPosition,
+            GridPosition nextPosition) {
+        if (nextPosition.x < currentPosition.x) {
+            return new Action("Move", "North");
         }
-        return shortestNode;
-    }
-
-    private void evaluateNeighbours(Node evalNode, Set<Node> settledNodes,
-            Set<Node> unsettledNodes, Map<Node, Integer> distance) {
-        List<Edge> adjacentNodes = evalNode.getChildren();
-        for (Edge destNode : adjacentNodes) {
-            if (!settledNodes.contains(destNode.getNode())) {
-                Integer dist = distance.get(destNode.getNode());
-                if (dist == null) {
-                    dist = 0;
-                }
-                if (destNode.getNode().getNodeType().equals("HOLE")) {
-                    dist += BIG_DISTANCE;
-                } else {
-                    dist += 1;
-                }
-                if (distance.get(destNode.getNode()) == null || distance.get(destNode.getNode())> dist) {
-                    System.out.println("morti matii " + destNode.getNode());
-                    distance.put(destNode.getNode(), dist);
-                    unsettledNodes.add(destNode.getNode());
-                }
-            }
+        if (nextPosition.x > currentPosition.x) {
+            return new Action("Move", "South");
         }
+        if (nextPosition.y < currentPosition.y) {
+            return new Action("Move", "East");
+        }
+        if (nextPosition.y > currentPosition.y) {
+            return new Action("Move", "West");
+        }
+        return null;
     }
 
     public void sendAction(Perception perception) throws IOException, InterruptedException {
@@ -229,7 +259,6 @@ public class AgentBehavior extends CyclicBehaviour {
         if (receivedMsg != null) {
             gotFirstEnvMessage = true;
             Perception perception = (Perception) receivedMsg.getContentObject();
-            System.out.println(perception);
            /*
             System.out.println(color + ": " + perception);
             System.out.println(color + " ERROR: " + perception.error);

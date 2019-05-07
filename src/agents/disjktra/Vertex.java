@@ -2,14 +2,20 @@ package agents.disjktra;
 
 import agents.utils.GridPosition;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Vertex {
+public class Vertex implements Serializable {
     GridPosition position;
     private String nodeType;
 
     public Vertex(GridPosition position) {
+        this.position = position;
+    }
 
+    public Vertex(GridPosition position, String nodeType) {
+        this.position = position;
+        this.nodeType = nodeType;
     }
 
     public GridPosition getPosition() {

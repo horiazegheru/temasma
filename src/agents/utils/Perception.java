@@ -1,5 +1,6 @@
 package agents.utils;
 
+import agents.disjktra.GraphNou;
 import agents.model.Graph;
 import jade.core.AID;
 
@@ -18,11 +19,11 @@ public class Perception implements Serializable {
     public Tile currentTile;
     public String error;
     public ArrayList<AID> otherAgentAIDs;
-    public Graph graph;
+    public GraphNou graph;
 
     public Perception(int operationTime, int width, int height, ArrayList<GridPosition> obstacles,
                       ArrayList<Tile> tiles, ArrayList<Hole> holes, int points, GridPosition pos, Tile currentTile,
-                      String error, ArrayList<AID> otherAgentAIDs, Graph graph) {
+                      String error, ArrayList<AID> otherAgentAIDs, GraphNou graph) {
 
         this.operationTime = operationTime;
         this.width = width;

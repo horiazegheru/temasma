@@ -1,8 +1,9 @@
 package agents.disjktra;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class GraphNou {
+public class GraphNou implements Serializable {
     private final List<Vertex> vertexes;
     private final List<EdgeNou> edges;
 

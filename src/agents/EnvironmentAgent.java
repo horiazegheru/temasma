@@ -1,6 +1,5 @@
 package agents;
 
-import FIPA.DateTime;
 import agents.behaviors.EnvironmentBehavior;
 import agents.disjktra.EdgeNou;
 import agents.disjktra.GraphNou;
@@ -43,8 +42,8 @@ public class EnvironmentAgent extends Agent {
 
         HashMap<AID, GridPosition> aidPositions = (HashMap<AID, GridPosition>) getArguments()[8];
 
-        Graph graph = createGraphForDijkstra();
-        Node root = graph.getRoot();
+        GraphNou graph = createGraphForDijkstra();
+        /*Node root = graph.getRoot();
         System.out.println("Graful meu fuTuT");
         Map<Node, Boolean> done = new HashMap<>();
         List<Node> toPrint = new ArrayList<>();
@@ -62,7 +61,7 @@ public class EnvironmentAgent extends Agent {
             toPrint.remove(0);
         }
 
-
+*/
         for (AID aid: aidPositions.keySet())
             aidsScores.put(aid, 0);
 
@@ -72,28 +71,49 @@ public class EnvironmentAgent extends Agent {
                 aidsScores, aidPositions, startTime, graph));
     }
 
-    private Graph createGraphForDijkstra() {
+    private GraphNou createGraphForDijkstra() {
 
         List<Vertex> nodes = new ArrayList<>();
         List<EdgeNou> edges = new ArrayList<>();
-
-
+        System.out.println("wdth " + width);
+        System.out.println("height " + height);
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                Vertex vertex  = new Vertex(new GridPosition(i, j));
+                GridPosition currentPosition = new GridPosition(i,j);
+                if (obstacles.stream().anyMatch(currentPosition::equals)) {
+                    continue;
+                }
+                if (holes.stream().anyMatch(hole -> (currentPosition.equals(hole.pos) && hole.depth > 0))) {
+                    Vertex vertex = new Vertex(new GridPosition(i, j), "HOLE");
+                    nodes.add(vertex);
+                    continue;
+                }
+                Vertex vertex = new Vertex(new GridPosition(i, j));
                 nodes.add(vertex);
+
             }
         }
 
-
-
+        for (Vertex vertex : nodes) {
+            for (Vertex children : nodes) {
+                if (isUpperOrLower(vertex, children)) {
+                    /*children.setParent(node);*/
+                    edges.add(new EdgeNou(vertex, children, getCost(children)));
+                }
+                if (isLeftOrRight(vertex, children)) {
+                    /*children.setParent(node);*/
+                    edges.add(new EdgeNou(vertex, children, getCost(children)));
+                }
+            }
+        }
         GraphNou graphNou = new GraphNou(nodes, edges);
-
-
+        return graphNou;
+    }
+/*
         Graph graph = new Graph();
         List<Node> allNodes = new ArrayList<>();
 
-/*        for (int i = 0; i < width; i++) {
+*//*        for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
 
                 GridPosition currentPosition = new GridPosition(i, j);
@@ -113,18 +133,6 @@ public class EnvironmentAgent extends Agent {
             }
         }*/
 
-        for (Vertex vertex : nodes) {
-            for (Vertex children : nodes) {
-                if (isUpperOrLower(vertex, children)) {
-                    /*children.setParent(node);*/
-                    edges.add(new EdgeNou(vertex, children, getCost(children)));
-                }
-                if (isLeftOrRight(vertex, children)) {
-                    /*children.setParent(node);*/
-                    edges.add(new EdgeNou(vertex, children, getCost(children)));
-                }
-        }
-        }
 
       /*  for (Node node : allNodes) {
             if (node.getPosition().x == 0 && node.getPosition().y == 0) {
@@ -141,12 +149,12 @@ public class EnvironmentAgent extends Agent {
                     node.addChildren(children, getCost(children));
                 }
             }
-        }*/
-        return graph;
-    }
+        }*
+        return graph;*/
+    /*}*/
 
     private int getCost(Vertex children) {
-        return Arrays.asList("TILE", "HOLE").contains(children.getNodeType()) ? Integer.MAX_VALUE : 0;
+        return "HOLE".equals(children.getNodeType()) ? 99999 : 1;
     }
 
     @Override

@@ -20,15 +20,15 @@ public class DijkstraAlgorithm {
 
     public DijkstraAlgorithm(GraphNou graph) {
         // create a copy of the array so that we can operate on this array
-        this.nodes = new ArrayList<Vertex>(graph.getVertexes());
-        this.edges = new ArrayList<EdgeNou>(graph.getEdges());
+        this.nodes = new ArrayList<>(graph.getVertexes());
+        this.edges = new ArrayList<>(graph.getEdges());
     }
 
     public void execute(Vertex source) {
-        settledNodes = new HashSet<Vertex>();
-        unSettledNodes = new HashSet<Vertex>();
-        distance = new HashMap<Vertex, Integer>();
-        predecessors = new HashMap<Vertex, Vertex>();
+        settledNodes = new HashSet<>();
+        unSettledNodes = new HashSet<>();
+        distance = new HashMap<>();
+        predecessors = new HashMap<>();
         distance.put(source, 0);
         unSettledNodes.add(source);
         while (unSettledNodes.size() > 0) {
@@ -110,6 +110,7 @@ public class DijkstraAlgorithm {
         Vertex step = target;
         // check if a path exists
         if (predecessors.get(step) == null) {
+            System.out.println("d-aici mancati-as pulaa");
             return null;
         }
         path.add(step);
@@ -122,4 +123,49 @@ public class DijkstraAlgorithm {
         return path;
     }
 
+    public List<Vertex> getNodes() {
+        return nodes;
+    }
+
+    public List<EdgeNou> getEdges() {
+        return edges;
+    }
+
+    public Set<Vertex> getSettledNodes() {
+        return settledNodes;
+    }
+
+    public void setSettledNodes(Set<Vertex> settledNodes) {
+        this.settledNodes = settledNodes;
+    }
+
+    public Set<Vertex> getUnSettledNodes() {
+        return unSettledNodes;
+    }
+
+    public void setUnSettledNodes(Set<Vertex> unSettledNodes) {
+        this.unSettledNodes = unSettledNodes;
+    }
+
+    public Map<Vertex, Vertex> getPredecessors() {
+        return predecessors;
+    }
+
+    public void setPredecessors(Map<Vertex, Vertex> predecessors) {
+        this.predecessors = predecessors;
+    }
+
+    public Map<Vertex, Integer> getDistance() {
+        return distance;
+    }
+
+    public void setDistance(Map<Vertex, Integer> distance) {
+        this.distance = distance;
+    }
+
+    @Override public String toString() {
+        return "DijkstraAlgorithm{" + "nodes=" + nodes + ", edges=" + edges + ", settledNodes="
+                + settledNodes + ", unSettledNodes=" + unSettledNodes + ", predecessors="
+                + predecessors + ", distance=" + distance + '}';
+    }
 }
