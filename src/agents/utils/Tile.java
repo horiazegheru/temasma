@@ -14,7 +14,7 @@ public class Tile implements Serializable {
 	}
 
 	public String toString() {
-		return this.count + " " + this.color + " " + this.pos;
+		return "cate " +  this.count + " cul " + this.color + " pos " + this.pos;
 	}
 
 	public boolean equals(Object o) {

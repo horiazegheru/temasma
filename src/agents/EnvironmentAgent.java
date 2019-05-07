@@ -16,6 +16,7 @@ import jade.core.Agent;
 import java.util.*;
 
 public class EnvironmentAgent extends Agent {
+    public static final String HOLE = "HOLE";
     String name;
     int agentsNr;
     int operationTime;
@@ -43,25 +44,6 @@ public class EnvironmentAgent extends Agent {
         HashMap<AID, GridPosition> aidPositions = (HashMap<AID, GridPosition>) getArguments()[8];
 
         GraphNou graph = createGraphForDijkstra();
-        /*Node root = graph.getRoot();
-        System.out.println("Graful meu fuTuT");
-        Map<Node, Boolean> done = new HashMap<>();
-        List<Node> toPrint = new ArrayList<>();
-        toPrint.add(root);
-        while (!toPrint.isEmpty()) {
-            Node currentNode = toPrint.get(0);
-            System.out.println(currentNode);
-            List<Edge> kidos = currentNode.getChildren();
-            kidos.forEach(kid -> {
-                if (!Boolean.TRUE.equals(done.get(kid.getNode()))) {
-                    done.put(kid.getNode(), Boolean.TRUE);
-                    toPrint.add(kid.getNode());
-                }
-            });
-            toPrint.remove(0);
-        }
-
-*/
         for (AID aid: aidPositions.keySet())
             aidsScores.put(aid, 0);
 
@@ -75,8 +57,6 @@ public class EnvironmentAgent extends Agent {
 
         List<Vertex> nodes = new ArrayList<>();
         List<EdgeNou> edges = new ArrayList<>();
-        System.out.println("wdth " + width);
-        System.out.println("height " + height);
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
                 GridPosition currentPosition = new GridPosition(i,j);
@@ -84,7 +64,7 @@ public class EnvironmentAgent extends Agent {
                     continue;
                 }
                 if (holes.stream().anyMatch(hole -> (currentPosition.equals(hole.pos) && hole.depth > 0))) {
-                    Vertex vertex = new Vertex(new GridPosition(i, j), "HOLE");
+                    Vertex vertex = new Vertex(new GridPosition(i, j), HOLE);
                     nodes.add(vertex);
                     continue;
                 }

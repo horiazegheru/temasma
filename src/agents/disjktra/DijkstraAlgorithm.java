@@ -110,7 +110,6 @@ public class DijkstraAlgorithm {
         Vertex step = target;
         // check if a path exists
         if (predecessors.get(step) == null) {
-            System.out.println("d-aici mancati-as pulaa");
             return null;
         }
         path.add(step);

@@ -75,18 +75,6 @@ public class EnvironmentBehavior extends CyclicBehaviour {
             public void run() {
                 printGrid();
             }}, 0, TIMER_DELAY);
-       /*
-        System.out.println("my name is " + "env");
-        System.out.println("agentsNr = " +  agentsNr);
-        System.out.println("operationTime = " + operationTime);
-        System.out.println("totalTime = " + totalTime);
-        System.out.println("width = " + width);
-        System.out.println("height = " + height);
-        System.out.println("obstacles = " + obstacles);
-        System.out.println("tiles = " + tiles);
-        System.out.println("holes = " + holes);
-        System.out.println("aidsScores = " + aidsScores);
-        */
     }
 
     public void sendPerception(AID aid) throws IOException {
@@ -155,12 +143,13 @@ public class EnvironmentBehavior extends CyclicBehaviour {
     public String executePick(AID sender, Action action) {
         Tile toDelete = null;
         boolean tileExists = false;
-
+        boolean colorFound = false;
         for (Tile tile: tiles) {
             if (tile.pos.equals(aidPositions.get(sender))) {
                 tileExists = true;
                 if (tile.color.equals(action.arg1)) {
                     if (tile.count > 0) {
+                        colorFound = true;
                         tile.count--;
                         aidTiles.put(sender, new Tile(1, tile.color, tile.pos));
                         if (tile.count == 0)
@@ -168,12 +157,12 @@ public class EnvironmentBehavior extends CyclicBehaviour {
                     } else {
                         return Errors.NO_TILE_AT_COORDS.getMessage();
                     }
-                } else {
-                    return Errors.NO_TILE_COLOR_AT_COORDS.getMessage();
                 }
             }
         }
-
+        if (tileExists && !colorFound) {
+            return  Errors.NO_TILE_COLOR_AT_COORDS.getMessage();
+        }
         if (!tileExists)
             return  Errors.NO_TILE_AT_COORDS.getMessage();
 
@@ -349,8 +338,6 @@ public class EnvironmentBehavior extends CyclicBehaviour {
 
     public String executeAction(AID sender, Action action) throws InterruptedException {
         String errorMessage = null;
-        /*System.out.println(sender.getLocalName() + " " + action);*/
-
         if (action.actionName.equals("Pick"))
             errorMessage = executePick(sender, action);
         if (action.actionName.equals("Use_tile"))

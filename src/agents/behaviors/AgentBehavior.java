@@ -19,7 +19,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class AgentBehavior extends CyclicBehaviour {
-    public static final int BIG_DISTANCE = 100000;
+    public static final int BIG_NUMBER = 1000000;
+    public static final String HOLE = "HOLE";
     String color;
     GridPosition pos;
     AID envAID;
@@ -47,9 +48,6 @@ public class AgentBehavior extends CyclicBehaviour {
         this.pos = pos;
         this.envAID = envAID;
 
-       /* System.out.println("my name is " + color);
-        System.out.println(color + " is at pos " + pos);
-        System.out.println(color + " knows envAID is " + envAID);*/
         aliveAgents = agentsNr;
     }
 
@@ -58,12 +56,115 @@ public class AgentBehavior extends CyclicBehaviour {
         // EXAMPLE WITH ACTIONS THAT MAKE GREEN AGENT GRAB A BLUE TILE AND PUT IT IN A BLUE HOLE
         // BLUE WILL DIE BECAUSE IT WILL GET AN ERROR (ACTIONS DO NOT MATCH)
 
+        if (color.equals("green")){
+            Thread.sleep(200);
+        }
+
         GridPosition currentPosition = perception.pos;
         List<Tile> tiles = perception.tiles;
         List<Hole> holes = perception.holes;
         ArrayList<GridPosition> obstacles = perception.obstacles;
         Tile currentTile = perception.currentTile;
         GraphNou graph = perception.graph;
+        Vertex startingNode = getStartingNode(currentPosition, graph);
+
+        DijkstraAlgorithm djkaAlg = new DijkstraAlgorithm(graph);
+        djkaAlg.execute(startingNode);
+        Hole holeIWantToFill = null;
+
+        if (currentTile == null) {
+            holeIWantToFill = findHoleSameColor(holes, holeIWantToFill);
+            holeIWantToFill = findClosestHoleIfDidNotFindSameColor(holes, graph, djkaAlg, holeIWantToFill);
+            if (holeIWantToFill != null) {
+                return determineActionInOrderToGetTileForHole(currentPosition, tiles, graph,
+                                djkaAlg);
+            } else {
+                // TODO same as no tile, move like a madman, better handling should be done
+                return new Action("Move", "East");
+            }
+        }
+        else {
+            String tileColor = currentTile.color;
+            if (tileColor.equals(color)) {
+                return handleTileOfSameColorAsAgent(currentPosition, holes, graph, djkaAlg);
+            } else {
+                Vertex nodeOfHole = getClosestHole(graph, djkaAlg, holes, BIG_NUMBER);
+                if (nodeOfHole != null) {
+                    return gotToHoleOrFillHole(currentPosition, djkaAlg, nodeOfHole);
+                } else {
+                    return new Action("Drop_tile", "const");
+                }
+            }
+
+        }
+    }
+
+    private Action determineActionInOrderToGetTileForHole(GridPosition currentPosition,
+            List<Tile> tiles, GraphNou graph, DijkstraAlgorithm djkaAlg) {
+        Tile tileIwillBeUsing = null;
+        Vertex nodeOfTile = null;
+        for (Tile tile : tiles) {
+            Integer minDistanceTale = Integer.MAX_VALUE;
+            if (tile.color.equals(color) && tile.count > 0) {
+                nodeOfTile = getClosestTile(graph, djkaAlg, nodeOfTile, tile, minDistanceTale);
+                tileIwillBeUsing = tile;
+            }
+        }
+
+        if (nodeOfTile == null) {
+            int minDistanceTale = BIG_NUMBER;
+            for (Tile tile : tiles) {
+                for (Vertex vertex : graph.getVertexes()) {
+                    if (vertex.getPosition().equals(tile.pos) && tile.count > 0) {
+                        Integer dist = djkaAlg.getDistance().get(vertex);
+                        if (dist < minDistanceTale) {
+                            minDistanceTale = dist;
+                            nodeOfTile = vertex;
+                            tileIwillBeUsing = tile;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (nodeOfTile != null) {
+            LinkedList<Vertex> path = djkaAlg.getPath(nodeOfTile);
+            if (path != null && path.size() > 1) {
+                GridPosition nextPosition = path.get(1).getPosition();
+                return determinePositioningForPlacingAndMoving(currentPosition, nextPosition);
+
+            } else {
+                return new Action("Pick", tileIwillBeUsing.color);
+            }
+        } else {
+            /*
+            TODO sometimes there are no more tiles, we should see how we handle that this is a placeholder
+             as a bad move is handled by the environment.
+            */
+            return new Action("Move", "West");
+        }
+    }
+
+    private Hole findClosestHoleIfDidNotFindSameColor(List<Hole> holes, GraphNou graph,
+            DijkstraAlgorithm djkaAlg, Hole holeIWantToFill) {
+        if (holeIWantToFill == null) {
+            holeIWantToFill = getClosestHoleToFill(holes, graph, djkaAlg, holeIWantToFill);
+
+        }
+        return holeIWantToFill;
+    }
+
+    private Hole findHoleSameColor(List<Hole> holes, Hole holeIWantToFill) {
+        for (Hole hole : holes) {
+            if (hole.color.equals(color)) {
+                holeIWantToFill = hole;
+            }
+        }
+        return holeIWantToFill;
+    }
+
+    private Vertex getStartingNode(GridPosition currentPosition, GraphNou graph) {
         Vertex startingNode = null;
         for (Vertex vertex : graph.getVertexes()) {
             if (vertex.getPosition().equals(currentPosition)) {
@@ -71,127 +172,65 @@ public class AgentBehavior extends CyclicBehaviour {
                 break;
             }
         }
-        DijkstraAlgorithm djkaAlg = new DijkstraAlgorithm(graph);
-        djkaAlg.execute(startingNode);
-        Hole holeIWantToFill = null;
-        System.out.println("am ion mana " + currentTile);
-        if (currentTile == null) {
-            for (Hole hole : holes) {
-/*
-                System.out.println(hole);
-*/
-                if (/*hole.depth == 1 && */hole.color.equals(color)) {
-                    holeIWantToFill = hole;
-                }
-            }
-            if (holeIWantToFill != null) {
-                Tile tileIwillBeUsing = null;
-                Vertex nodeOfTile = null;
-                for (Tile tile : tiles) {
-                    Integer minDistanceTale = Integer.MAX_VALUE;
-                    if (tile.color.equals(color)) {
-                        nodeOfTile = getClosestTile(graph, djkaAlg, nodeOfTile, tile, minDistanceTale);
-                        tileIwillBeUsing = tile;
-                    }
-                }
-                if (nodeOfTile == null) {
-                    int minDistanceTale = 1000000;
-                    for (Tile tile : tiles) {
-                        for (Vertex vertex : graph.getVertexes()) {
-                            if (vertex.getPosition().equals(tile.pos)) {
-                                Integer dist = djkaAlg.getDistance().get(vertex);
-                                if (dist < minDistanceTale) {
-                                    nodeOfTile = vertex;
-                                    tileIwillBeUsing = tile;
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (nodeOfTile != null) {
-                    LinkedList<Vertex> path = djkaAlg.getPath(nodeOfTile);
-                    /*System.out.println("am gasit pathul plii plsss <# ");
-                    System.out.println(path);*/
-                    if (path != null && path.size() > 1) {
-                        GridPosition nextPosition = path.get(1).getPosition();
-                        /*System.out
-                                .println("I am " + color + " and looking to go to " + nextPosition);*/
-                        Action x = determineMoveAccordingToNextPosition(currentPosition, nextPosition);
-                        if (x != null)
-                            return x;
-                    } else {
-                        return new Action("Pick", tileIwillBeUsing.color);
-                    }
-                }
+        return startingNode;
+    }
+
+    private Action handleTileOfSameColorAsAgent(GridPosition currentPosition, List<Hole> holes,
+            GraphNou graph, DijkstraAlgorithm djkaAlg) {
+        List<Hole> holesToFill = holes.stream().filter(hole -> hole.color.equals(color)).collect(
+                Collectors.toList());
+        Integer minDistanceTale = 1000000;
+        Vertex nodeOfHole = null;
+        nodeOfHole = getClosestHole(graph, djkaAlg, holesToFill, minDistanceTale);
+        if (nodeOfHole == null) {
+            nodeOfHole = getClosestHole(graph, djkaAlg, holes, minDistanceTale);
+        }
+        if (nodeOfHole != null) {
+            LinkedList<Vertex> path = djkaAlg.getPath(nodeOfHole);
+            if (path != null && path.size() > 1 && !HOLE.equals(path.get(1).getNodeType())) {
+                GridPosition nextPosition = path.get(1).getPosition();
+                return determinePositioningForPlacingAndMoving(currentPosition, nextPosition);
+
+            } else {
+                GridPosition nextPosition = path.get(1).getPosition();
+                Action x = determinePositioningForPlacingAndMoving(currentPosition, nextPosition);
+                return new Action("Use_tile", x.arg1);
             }
         } else {
-            String tileColor = currentTile.color;
-            if (tileColor.equals(color)) {
-                List<Hole> holesToFill = holes.stream().filter(hole -> hole.color.equals(color)).collect(Collectors.toList());
-                Integer minDistanceTale = 1000000;
-                Vertex nodeOfHole = null;
-                nodeOfHole = getClosestHole(graph, djkaAlg, holesToFill, minDistanceTale);
-                /*System.out.println(djkaAlg);
-                System.out.println("gaura curului " + nodeOfHole + " din " + holeIWantToFill);*/
-                if (nodeOfHole == null) {
-                    nodeOfHole = getClosestHole(graph, djkaAlg, holes, minDistanceTale);
-                }
-                if (nodeOfHole != null) {
-                    LinkedList<Vertex> path = djkaAlg.getPath(nodeOfHole);
+            return new Action("Drop_tile", "const");
+        }
+    }
 
-/*
-                    System.out.println("am gasit pathul plii spre gaura <# ");
-*/
-                    System.out.println(path);
-                    if (path != null && path.size() > 1 && !"HOLE".equals(path.get(1).getNodeType())) {
-                        GridPosition nextPosition = path.get(1).getPosition();
-/*
-                        System.out.println("I am " + color + " and looking to go to " + nextPosition);
-*/
-                        Action x = determineMoveAccordingToNextPosition(currentPosition, nextPosition);
-                        if (x != null)
-                            return x;
-                    } else {
-                        GridPosition nextPosition = path.get(1).getPosition();
-                        Action x = determineMoveAccordingToNextPosition(currentPosition, nextPosition);
-                        return new Action("Use_tile", x.arg1);
+    private Hole getClosestHoleToFill(List<Hole> holes, GraphNou graph, DijkstraAlgorithm djkaAlg,
+            Hole holeIWantToFill) {
+        int minDistanceTale = BIG_NUMBER;
+        for (Hole holeToFill : holes) {
+            for (Vertex vertex : graph.getVertexes()) {
+                if (vertex.getPosition().equals(holeToFill.pos)) {
+                    Integer dist = djkaAlg.getDistance().get(vertex);
+                    if (dist < minDistanceTale) {
+                        holeIWantToFill = holeToFill;
+                        minDistanceTale = dist;
                     }
-                }
-            } else {
-                Vertex nodeOfHole = getClosestHole(graph, djkaAlg, holes, 1000000);
-                if (nodeOfHole != null) {
-                    Action x = gotToHoleOrFillHole(currentPosition, djkaAlg, nodeOfHole);
-                    if (x != null)
-                        return x;
+                    break;
                 }
             }
-
         }
-        if (color.equals("green")){
-            Thread.sleep(200);
-        }
-        return currentPosition.y % 2 == 0 ? new Action("Move", "North") : new Action("Move", "South");
+        return holeIWantToFill;
     }
 
     private Action gotToHoleOrFillHole(GridPosition currentPosition, DijkstraAlgorithm djkaAlg,
             Vertex nodeOfHole) {
         LinkedList<Vertex> path = djkaAlg.getPath(nodeOfHole);
 
-        System.out.println("am gasit pathul plii spre gaura <# ");
-        System.out.println(path);
-        if (path != null && path.size() > 1 && !"HOLE".equals(path.get(1).getNodeType())) {
+        if (path != null && path.size() > 1 && !AgentBehavior.HOLE.equals(path.get(1).getNodeType())) {
             GridPosition nextPosition = path.get(1).getPosition();
-            System.out.println("I am " + color + " and looking to go to " + nextPosition);
-            Action x = determineMoveAccordingToNextPosition(currentPosition, nextPosition);
-            if (x != null)
-                return x;
+            return determinePositioningForPlacingAndMoving(currentPosition, nextPosition);
         } else {
             GridPosition nextPosition = path.get(1).getPosition();
-            Action x = determineMoveAccordingToNextPosition(currentPosition, nextPosition);
+            Action x = determinePositioningForPlacingAndMoving(currentPosition, nextPosition);
             return new Action("Use_tile", x.arg1);
         }
-        return null;
     }
 
     private Vertex getClosestHole(GraphNou graph, DijkstraAlgorithm djkaAlg, List<Hole> holesToFill,
@@ -225,7 +264,7 @@ public class AgentBehavior extends CyclicBehaviour {
         return nodeOfTile;
     }
 
-    private Action determineMoveAccordingToNextPosition(GridPosition currentPosition,
+    private Action determinePositioningForPlacingAndMoving(GridPosition currentPosition,
             GridPosition nextPosition) {
         if (nextPosition.x < currentPosition.x) {
             return new Action("Move", "North");
@@ -239,7 +278,7 @@ public class AgentBehavior extends CyclicBehaviour {
         if (nextPosition.y > currentPosition.y) {
             return new Action("Move", "West");
         }
-        return null;
+        throw new RuntimeException("Can't step there");
     }
 
     public void sendAction(Perception perception) throws IOException, InterruptedException {
@@ -259,11 +298,7 @@ public class AgentBehavior extends CyclicBehaviour {
         if (receivedMsg != null) {
             gotFirstEnvMessage = true;
             Perception perception = (Perception) receivedMsg.getContentObject();
-           /*
-            System.out.println(color + ": " + perception);
-            System.out.println(color + " ERROR: " + perception.error);
-            */
-            pos = perception.pos;
+           pos = perception.pos;
             otherAgents = perception.otherAgentAIDs;
             negotiate();
 
